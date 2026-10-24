@@ -56,9 +56,45 @@
       </details>
     </section>
 
-    <!-- 2. ДОБАВИТЬ -->
+    <!-- 2. ПЕРСОНАЖИ -->
+    <section class="panel" id="p-chars" hidden>
+      <h2 id="c-title">Персонажи</h2>
+      <p class="small">Шаг 1. Создай персонажей: у каждого свой гардероб, на сайте он открывается по нажатию на карточку.</p>
+      <ul class="list" id="clist"></ul>
+      <form id="cform" autocomplete="off" style="margin-top:22px">
+        <span class="lbl" id="c-form-title">Новый персонаж</span>
+        <div class="cover-row">
+          <div class="cover-prev" id="c-prev"></div>
+          <div class="cover-side">
+            <button class="btn ghost" id="c-add-img" type="button">Выбрать обложку</button>
+            <input id="c-file" type="file" accept="image/*" hidden>
+            <p class="small">Портрет или арт персонажа. Можно без обложки.</p>
+          </div>
+        </div>
+        <label class="field" style="margin-top:18px">Имя<input id="c-name" required placeholder="Лилия"></label>
+        <label class="field">Короткая подпись<input id="c-note" placeholder="Необязательно: кто она, откуда"></label>
+        <div class="row">
+          <button class="btn" id="c-submit" type="submit">Добавить персонажа</button>
+          <button class="btn ghost" id="c-cancel" type="button" hidden>Отмена</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- 3. КАТЕГОРИИ -->
+    <section class="panel" id="p-cats" hidden>
+      <h2>Категории</h2>
+      <p class="small">Шаг 2. Создай категории один раз: потом при добавлении вещи они выбираются из списка. Они общие для всех персонажей.</p>
+      <div class="chips" id="catlist"></div>
+      <form id="catform" class="inline" autocomplete="off">
+        <input id="cat-new" placeholder="Новая категория, например Корсеты" aria-label="Новая категория">
+        <button class="btn" type="submit">Добавить</button>
+      </form>
+    </section>
+
+    <!-- 4. ДОБАВИТЬ -->
     <section class="panel" id="p-add" hidden>
       <h2 id="form-title">Новая вещь</h2>
+      <p class="small" style="margin:-8px 0 18px">Шаг 3. Выбери персонажа и категорию из созданных выше.</p>
       <form id="form" autocomplete="off">
         <div class="imgs">
           <span class="lbl">Фото. Первое станет обложкой, чтобы выбрать другое, нажми на него.</span>
@@ -70,8 +106,11 @@
 
         <label class="field" style="margin-top:22px">Название<input id="f-name" required placeholder="Чёрный свитер оверсайз"></label>
 
-        <label class="field">Категория<input id="f-cat" list="cats" required placeholder="Верх"></label>
-        <datalist id="cats"></datalist>
+        <div class="two">
+          <label class="field">Персонаж<select id="f-char" required></select></label>
+          <label class="field">Категория<select id="f-cat" required></select></label>
+        </div>
+        <p class="small" id="f-hint" hidden></p>
 
         <div class="pick">
           <span class="lbl">Цвет. До двух, первый считается основным.</span>
@@ -95,7 +134,7 @@
       </form>
     </section>
 
-    <!-- 3. СПИСОК -->
+    <!-- 5. СПИСОК -->
     <section class="panel" id="p-list" hidden>
       <h2>В гардеробе <span id="n" class="small"></span></h2>
       <ul class="list" id="list"></ul>

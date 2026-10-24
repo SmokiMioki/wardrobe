@@ -3,8 +3,10 @@
   const $ = (s, r = document) => r.querySelector(s);
   const LS = 'wardrobe-admin';
   const FILE = 'wardrobe.json';
+  const CFILE = 'characters.json';   // персонажи и категории
   const MULTI = 'linear-gradient(90deg,#e8a0b4,#e6c84a,#8ec3e6,#7b5ea7)';
   let list = [], sha = null, editing = -1;
+  let chars = [], cats = [], csha = null, cedit = -1, cpic = null;   // персонажи, категории, обложка в форме
   let picked = [];                 // выбранные цвета по порядку
   const seasons = new Set();       // выбранные сезоны
   let pics = [];                   // { path, preview } уже в репо; { blob, preview, w, h } ещё нет
@@ -67,12 +69,19 @@
   const splitTags = s => s.split(',').map(t => t.trim()).filter(Boolean);
   const uniq = arr => { const seen = new Set(); return arr.filter(t => !seen.has(t.toLowerCase()) && seen.add(t.toLowerCase())); };
   function renderHints() {
-    const cats = [...new Set([...C.cats, ...list.map(e => e.cat).filter(Boolean)])];
-    $('#cats').innerHTML = cats.map(c => `<option value="${esc(c)}">`).join('');
     const n = {};
     list.forEach(e => (e.tags || []).forEach(t => { n[t] = (n[t] || 0) + 1; }));
     const top = Object.keys(n).sort((a, b) => n[b] - n[a] || a.localeCompare(b, 'ru')).slice(0, 14);
     $('#sug').innerHTML = top.map(t => `<button type="button" data-t="${esc(t)}">${esc(t)}</button>`).join('');
+  }
+  function renderSelects() {
+    const curChar = $('#f-char').value, curCat = $('#f-cat').value;
+    const all = cats.slice(); if (curCat && !all.includes(curCat)) all.push(curCat);
+    $('#f-char').innerHTML = '<option value="">Выбери персонажа</option>' + chars.map(c => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('');
+    $('#f-cat').innerHTML = '<option value="">Выбери категорию</option>' + all.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+    $('#f-char').value = curChar; $('#f-cat').value = curCat;
+    const hint = !chars.length ? 'Сначала создай хотя бы одного персонажа выше.' : !cats.length ? 'Сначала создай хотя бы одну категорию выше.' : '';
+    $('#f-hint').textContent = hint; $('#f-hint').hidden = !hint;
   }
   $('#sug').addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b) return;
@@ -164,15 +173,22 @@
   $('#owner').value = cfg.owner; $('#repo').value = cfg.repo;
   $('#branch').value = cfg.branch || 'main'; $('#token').value = cfg.token || '';
 
-  async function load() {
-    const r = await api(`${fileApi(FILE)}?ref=${encodeURIComponent(cfg.branch)}&t=${Date.now()}`);
-    if (r.status === 404) { list = []; sha = null; return; }
+  async function loadJson(file) {
+    const r = await api(`${fileApi(file)}?ref=${encodeURIComponent(cfg.branch)}&t=${Date.now()}`);
+    if (r.status === 404) return { data: null, sha: null };
     if (r.status === 401 || r.status === 403) throw new Error('Токен не подходит или у него нет права Contents: Read and write.');
     if (!r.ok) throw new Error('GitHub ответил ошибкой ' + r.status);
     const j = await r.json();
-    sha = j.sha;
-    const parsed = JSON.parse(fromB64(j.content.replace(/\n/g, '')) || '[]');
-    list = Array.isArray(parsed) ? parsed : [];
+    return { data: JSON.parse(fromB64(j.content.replace(/\n/g, '')) || 'null'), sha: j.sha };
+  }
+  async function load() {
+    const w = await loadJson(FILE);
+    list = Array.isArray(w.data) ? w.data : []; sha = w.sha;
+    const m = await loadJson(CFILE);
+    csha = m.sha;
+    const md = m.data && typeof m.data === 'object' ? m.data : null;
+    chars = md && Array.isArray(md.characters) ? md.characters : [];
+    cats = md ? (Array.isArray(md.cats) ? md.cats : []) : C.cats.slice();   // впервые: заготовка из config.js, потом правишь сама
   }
 
   $('#connect').addEventListener('click', async () => {
@@ -185,23 +201,25 @@
     try {
       await load();
       try { if ($('#remember').checked) localStorage.setItem(LS, JSON.stringify(cfg)); else localStorage.removeItem(LS); } catch {}
-      $('#p-add').hidden = false; $('#p-list').hidden = false;
+      $('#p-chars').hidden = false; $('#p-cats').hidden = false; $('#p-add').hidden = false; $('#p-list').hidden = false;
       render(); status('Вход выполнен ✓', 'ok');
     } catch (e) { status(e.message, 'err'); }
     busy(false);
   });
 
   /* ---------- сохранение ---------- */
-  async function save(message) {
-    const body = { message, content: toB64(JSON.stringify(list, null, 2) + '\n'), branch: cfg.branch };
-    if (sha) body.sha = sha;
-    const r = await api(fileApi(FILE), { method: 'PUT', body: JSON.stringify(body) });
+  async function putJson(file, obj, curSha, message) {
+    const body = { message, content: toB64(JSON.stringify(obj, null, 2) + '\n'), branch: cfg.branch };
+    if (curSha) body.sha = curSha;
+    const r = await api(fileApi(file), { method: 'PUT', body: JSON.stringify(body) });
     if (!r.ok) {
-      if (r.status === 409 || r.status === 422) throw new Error('Список изменился в другом месте. Нажми «Войти» ещё раз и повтори.');
+      if (r.status === 409 || r.status === 422) throw new Error('Данные изменились в другом месте. Нажми «Войти» ещё раз и повтори.');
       throw new Error(await errText(r, 'Не удалось сохранить (' + r.status + ')'));
     }
-    sha = (await r.json()).content.sha;
+    return (await r.json()).content.sha;
   }
+  const save = async message => { sha = await putJson(FILE, list, sha, message); };
+  const saveMeta = async message => { csha = await putJson(CFILE, { characters: chars, cats }, csha, message); };
 
   $('#form').addEventListener('submit', async e => {
     e.preventDefault();
@@ -210,6 +228,7 @@
     const item = {
       id: old ? old.id : Date.now().toString(36),
       name: $('#f-name').value.trim(),
+      char: $('#f-char').value,
       cat: $('#f-cat').value.trim(),
       colors: picked.slice(),
       seasons: C.seasons.filter(s => seasons.has(s)),
@@ -218,7 +237,8 @@
       added: (old && old.added) || new Date().toISOString()
     };
     if (!item.name) return status('Нужно название.', 'err');
-    if (!item.cat) return status('Выбери или впиши категорию.', 'err');
+    if (!item.char) return status('Выбери персонажа.', 'err');
+    if (!item.cat) return status('Выбери категорию.', 'err');
     if (!pics.length) return status('Добавь хотя бы одно фото.', 'err');
 
     const prev = list.slice();
@@ -251,11 +271,11 @@
 
   /* ---------- список ---------- */
   function render() {
-    renderHints();
+    renderHints(); renderSelects(); renderChars(); renderCats();
     $('#n').textContent = list.length ? `(${list.length})` : '';
     $('#list').innerHTML = list.length ? list.map((e, i) => `
       <li>${(e.images || [])[0] ? `<img class="pre" src="${esc(e.images[0])}" alt="" loading="lazy">` : ''}
-      <div class="t"><b>${esc(e.name)}</b><span>${esc([e.cat, (e.colors || []).join(', ')].filter(Boolean).join(', '))}</span></div>
+      <div class="t"><b>${esc(e.name)}</b><span>${esc([(chars.find(c => c.id === e.char) || {}).name || 'без персонажа', e.cat, (e.colors || []).join(', ')].filter(Boolean).join(' · '))}</span></div>
       <button type="button" data-a="edit" data-i="${i}">Править</button>
       <button type="button" class="del" data-a="del" data-i="${i}">Удалить</button></li>`).join('')
       : '<li class="none">Пока пусто. Добавь первую вещь выше.</li>';
@@ -266,7 +286,10 @@
     const i = +b.dataset.i, it = list[i];
     if (b.dataset.a === 'edit') {
       editing = i;
-      $('#f-name').value = it.name; $('#f-cat').value = it.cat || ''; $('#f-note').value = it.note || '';
+      $('#f-name').value = it.name;
+      $('#f-char').value = chars.some(c => c.id === it.char) ? it.char : '';
+      if (it.cat && ![...$('#f-cat').options].some(o => o.value === it.cat)) $('#f-cat').add(new Option(it.cat, it.cat));
+      $('#f-cat').value = it.cat || ''; $('#f-note').value = it.note || '';
       $('#f-tags').value = (it.tags || []).join(', ');
       picked = (it.colors || []).filter(n => n in C.colors); renderPalette();
       seasons.clear(); (it.seasons || []).forEach(s => seasons.add(s)); renderSeasons();
@@ -288,6 +311,127 @@
     }
   });
 
+  /* ---------- персонажи ---------- */
+  function renderCharPrev() {
+    $('#c-prev').innerHTML = cpic ? `<img src="${esc(cpic.preview)}" alt="">` : '<span>без обложки</span>';
+    $('#c-add-img').textContent = cpic ? 'Заменить обложку' : 'Выбрать обложку';
+  }
+  function resetChar() {
+    cedit = -1; $('#cform').reset();
+    if (cpic && cpic.blob) URL.revokeObjectURL(cpic.preview);
+    cpic = null; renderCharPrev();
+    $('#c-form-title').textContent = 'Новый персонаж';
+    $('#c-submit').textContent = 'Добавить персонажа'; $('#c-cancel').hidden = true;
+  }
+  function renderChars() {
+    $('#clist').innerHTML = chars.length ? chars.map((c, i) => {
+      const n = list.filter(e => e.char === c.id).length;
+      return `<li>${c.cover ? `<img class="pre" src="${esc(c.cover)}" alt="" loading="lazy">` : ''}
+      <div class="t"><b>${esc(c.name)}</b><span>${n} ${n === 1 ? 'вещь' : (n > 1 && n < 5 ? 'вещи' : 'вещей')}${c.note ? ' · ' + esc(c.note) : ''}</span></div>
+      <button type="button" data-a="cedit" data-i="${i}">Править</button>
+      <button type="button" class="del" data-a="cdel" data-i="${i}">Удалить</button></li>`;
+    }).join('') : '<li class="none">Персонажей пока нет. Создай первого ниже.</li>';
+  }
+  $('#c-add-img').addEventListener('click', () => $('#c-file').click());
+  $('#c-file').addEventListener('change', async e => {
+    const f = [...e.target.files].find(x => x.type.startsWith('image/'));
+    e.target.value = '';
+    if (!f) return;
+    busy(true); status('Сжимаю…');
+    try {
+      const s = await shrink(f);
+      if (cpic && cpic.blob) URL.revokeObjectURL(cpic.preview);
+      cpic = { blob: s.blob, w: s.w, h: s.h, preview: URL.createObjectURL(s.blob) };
+      renderCharPrev(); status('');
+    } catch { status('Не смог прочитать фото.', 'err'); }
+    busy(false);
+  });
+  $('#c-cancel').addEventListener('click', () => { resetChar(); status(''); });
+  $('#cform').addEventListener('submit', async e => {
+    e.preventDefault();
+    const name = $('#c-name').value.trim();
+    if (!name) return status('Нужно имя.', 'err');
+    const old = cedit >= 0 ? chars[cedit] : null;
+    const c = { id: old ? old.id : 'c' + Date.now().toString(36), name, note: $('#c-note').value.trim(), added: (old && old.added) || new Date().toISOString() };
+    if (old && old.cover) { c.cover = old.cover; if (old.ar) c.ar = old.ar; }
+    const prev = chars.slice();
+    let up = null;
+    busy(true);
+    try {
+      if (cpic && cpic.blob) {
+        status('Загружаю обложку…');
+        up = await putImage(cpic.blob, c.id, 'c');
+        c.cover = up.path; c.ar = +(cpic.w / cpic.h).toFixed(3);
+      }
+      status('Сохраняю…');
+      if (old) chars[cedit] = c; else chars.push(c);
+      await saveMeta((old ? 'Update character: ' : 'Add character: ') + name);
+      if (old && old.cover && old.cover !== c.cover) await rmFile(old.cover);
+      resetChar(); render();
+      status('Сохранено ✓ Сайт обновится через минуту.', 'ok');
+    } catch (err) {
+      chars = prev; render(); status(err.message, 'err');
+      if (up) await rmFile(up.path, up.sha);
+    }
+    busy(false);
+  });
+  $('#clist').addEventListener('click', async e => {
+    const b = e.target.closest('button'); if (!b) return;
+    const i = +b.dataset.i, c = chars[i];
+    if (b.dataset.a === 'cedit') {
+      cedit = i;
+      $('#c-name').value = c.name; $('#c-note').value = c.note || '';
+      if (cpic && cpic.blob) URL.revokeObjectURL(cpic.preview);
+      cpic = c.cover ? { path: c.cover, preview: c.cover } : null; renderCharPrev();
+      $('#c-form-title').textContent = 'Правка: ' + c.name;
+      $('#c-submit').textContent = 'Сохранить изменения'; $('#c-cancel').hidden = false;
+      $('#cform').scrollIntoView({ behavior: 'smooth' });
+    } else if (b.dataset.a === 'cdel') {
+      const n = list.filter(x => x.char === c.id).length;
+      if (n) return status(`У персонажа ${c.name} есть вещи (${n}). Сначала удали их или перенеси другому персонажу кнопкой «Править» у вещи.`, 'err');
+      if (!confirm(`Удалить персонажа «${c.name}»?`)) return;
+      const prev = chars.slice(); chars.splice(i, 1);
+      busy(true); status('Удаляю…');
+      try {
+        await saveMeta('Remove character: ' + c.name);
+        if (c.cover) await rmFile(c.cover);
+        resetChar(); render(); status('Удалено ✓', 'ok');
+      } catch (err) { chars = prev; render(); status(err.message, 'err'); }
+      busy(false);
+    }
+  });
+
+  /* ---------- категории ---------- */
+  function renderCats() {
+    $('#catlist').innerHTML = cats.length ? cats.map((c, i) => {
+      const n = list.filter(e => e.cat === c).length;
+      return `<span class="chip">${esc(c)}${n ? `<i>${n}</i>` : ''}<button type="button" data-i="${i}" aria-label="Удалить категорию ${esc(c)}">×</button></span>`;
+    }).join('') : '<span class="small">Категорий пока нет. Добавь первую ниже.</span>';
+  }
+  $('#catform').addEventListener('submit', async e => {
+    e.preventDefault();
+    const v = $('#cat-new').value.trim();
+    if (!v) return;
+    if (cats.some(c => c.toLowerCase() === v.toLowerCase())) return status('Такая категория уже есть.', 'err');
+    const prev = cats.slice(); cats.push(v);
+    busy(true); status('Сохраняю…');
+    try { await saveMeta('Add category: ' + v); $('#cat-new').value = ''; render(); status('Категория добавлена ✓', 'ok'); }
+    catch (err) { cats = prev; render(); status(err.message, 'err'); }
+    busy(false);
+  });
+  $('#catlist').addEventListener('click', async e => {
+    const b = e.target.closest('button'); if (!b) return;
+    const i = +b.dataset.i, c = cats[i];
+    const n = list.filter(x => x.cat === c).length;
+    if (n) return status(`В категории «${c}» есть вещи (${n}). Сначала перенеси или удали их.`, 'err');
+    if (!confirm(`Удалить категорию «${c}»?`)) return;
+    const prev = cats.slice(); cats.splice(i, 1);
+    busy(true); status('Удаляю…');
+    try { await saveMeta('Remove category: ' + c); render(); status('Удалено ✓', 'ok'); }
+    catch (err) { cats = prev; render(); status(err.message, 'err'); }
+    busy(false);
+  });
+
   function resetForm() {
     editing = -1; $('#form').reset();
     picked = []; renderPalette(); seasons.clear(); renderSeasons();
@@ -297,7 +441,7 @@
   }
   $('#cancel').addEventListener('click', () => { resetForm(); status(''); });
 
-  renderPalette(); renderSeasons(); renderHints();
+  renderPalette(); renderSeasons(); renderHints(); renderSelects(); renderCharPrev();
   /* автовход, если токен уже сохранён */
   if (cfg.owner && cfg.repo && cfg.token) $('#connect').click();
 })();

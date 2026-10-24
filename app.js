@@ -3,11 +3,14 @@
   const $ = (s, r = document) => r.querySelector(s);
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const MULTI = 'linear-gradient(90deg,#e8a0b4,#e6c84a,#8ec3e6,#7b5ea7)';
+  const NONE = '_none';    // «Без персонажа»: вещи, у которых персонаж не указан
 
-  let data = [];
+  let data = [];           // все вещи
+  let chars = [];          // персонажи
+  let catsList = C.cats;   // категории из админки (characters.json), иначе из config.js
   let view = [];           // то, что сейчас показано в сетке (после фильтров и сортировки)
   let intro = true;        // лента цветов «проявляется» только при первом показе
-  const state = { q: '', cat: '', color: '', season: '', sort: 'new' };
+  const state = { char: null, q: '', cat: '', color: '', season: '', sort: 'new' };   // char: null = главная
 
   const grid = $('#grid'), empty = $('#empty'), modal = $('#modal'), body = $('#modal-body');
   const bar = $('#bar'), tabs = $('#tabs'), seasonsEl = $('#seasons'), resetBtn = $('#reset'), sortSel = $('#sort');
@@ -24,12 +27,14 @@
   const dots = list => (list || []).map(n => `<i class="dot" style="background:${paint(n)}" title="${esc(n)}"></i>`).join('');
 
   /* ---------- мелочи ---------- */
-  const plural = n => {
+  const pl = (n, [one, few, many]) => {
     const a = n % 10, b = n % 100;
-    if (a === 1 && b !== 11) return 'вещь';
-    if (a >= 2 && a <= 4 && (b < 12 || b > 14)) return 'вещи';
-    return 'вещей';
+    if (a === 1 && b !== 11) return one;
+    if (a >= 2 && a <= 4 && (b < 12 || b > 14)) return few;
+    return many;
   };
+  const THINGS = ['вещь', 'вещи', 'вещей'];
+  const PEOPLE = ['персонаж', 'персонажа', 'персонажей'];
   const seasonText = s => !s || !s.length ? '' : s.length >= C.seasons.length ? 'Всесезон' : s.join(', ');
   const KANJI = { 'Весна': '春', 'Лето': '夏', 'Осень': '秋', 'Зима': '冬' };
   const seasonMarks = list => {
@@ -38,14 +43,22 @@
     return `<span class="ssn" title="${esc(seasonText(list))}">${k.length >= 4 ? '<b class="all">四季</b>' : k.map(n => `<b>${KANJI[n]}</b>`).join('')}</span>`;
   };
   const dateText = iso => { try { return new Date(iso).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' }); } catch { return ''; } };
+  const NEW_MS = 3 * 864e5;
 
   function prep(e) {
     e.colors = e.colors || []; e.seasons = e.seasons || []; e.tags = e.tags || []; e.images = e.images || [];
+    if (!chars.some(c => c.id === e.char)) e.char = NONE;
     e._hay = [e.name, e.cat, e.note, ...e.colors, ...e.seasons, ...e.tags].join(' ').toLowerCase();
   }
+  /* персонажи на главной: свои плюс «Без персонажа», если такие вещи есть */
+  const allChars = () => data.some(e => e.char === NONE) ? [...chars, { id: NONE, name: 'Без персонажа' }] : chars;
+  const charById = id => allChars().find(c => c.id === id);
+  const hashOf = (cid, iid) => cid ? '#' + encodeURIComponent(cid) + (iid ? '/' + encodeURIComponent(iid) : '') : '';
+  const setHash = iid => history.replaceState(null, '', location.pathname + location.search + hashOf(state.char, iid));
 
   /* ---------- фильтрация ---------- */
   function ok(e, skip) {
+    if (e.char !== state.char) return false;
     if (skip !== 'cat' && state.cat && e.cat !== state.cat) return false;
     if (skip !== 'color' && state.color && !e.colors.includes(state.color)) return false;
     if (state.season && !e.seasons.includes(state.season)) return false;
@@ -57,6 +70,21 @@
     old: (a, b) => (a.added || '9').localeCompare(b.added || '9'),
     name: (a, b) => a.name.localeCompare(b.name, 'ru')
   };
+
+  /* ---------- главная: персонажи ---------- */
+  function renderHome() {
+    const list = allChars();
+    grid.innerHTML = list.map((c, i) => {
+      const n = data.filter(e => e.char === c.id).length;
+      const ph = c.cover
+        ? `<span class="ph"${c.ar ? ` style="aspect-ratio:${c.ar}"` : ''}><img src="${esc(c.cover)}" alt="${esc(c.name)}" loading="lazy" decoding="async"></span>`
+        : `<span class="ph noimg" style="background:linear-gradient(160deg,#6e1020,#2a0d16)">${esc((c.name || '?').charAt(0).toUpperCase())}</span>`;
+      return `<a class="item char" href="${hashOf(c.id) || '#'}" style="--i:${Math.min(i, 14)}">${ph}<span class="kicker">${n} ${pl(n, THINGS)}</span><span class="nm">${esc(c.name)}</span>${c.note ? `<span class="cnote">${esc(c.note)}</span>` : ''}</a>`;
+    }).join('');
+    empty.innerHTML = '<h2>Здесь пока нет персонажей</h2><p>Первого персонажа можно создать в админке. Потом в ней же появятся категории и вещи.</p><a href="admin.html">Открыть админку</a>';
+    empty.hidden = list.length > 0;
+    $('#count').textContent = list.length ? `${list.length} ${pl(list.length, PEOPLE)}` : '';
+  }
 
   /* ---------- цветовая лента ---------- */
   function renderSpectrum() {
@@ -79,7 +107,7 @@
     const tot = {};
     data.forEach(e => { if (ok(e, 'cat')) tot[e.cat] = (tot[e.cat] || 0) + 1; });
     const sum = Object.values(tot).reduce((a, b) => a + b, 0);
-    const cats = [...new Set([...C.cats, ...data.map(e => e.cat)])].filter(c => c && (tot[c] || c === state.cat));
+    const cats = [...new Set([...catsList, ...data.map(e => e.cat)])].filter(c => c && (tot[c] || c === state.cat));
     tabs.innerHTML = [['', 'Все', sum], ...cats.map(c => [c, c, tot[c] || 0])].map(([k, l, n]) =>
       `<button class="tab${state.cat === k ? ' on' : ''}" type="button" data-k="${esc(k)}" aria-pressed="${state.cat === k}">${esc(l)}<span class="n">${n}</span></button>`
     ).join('');
@@ -89,10 +117,10 @@
     resetBtn.hidden = !(state.cat || state.color || state.season || state.q.trim());
   }
 
-  /* ---------- сетка ---------- */
+  /* ---------- сетка вещей персонажа ---------- */
   function renderGrid() {
     view = data.filter(e => ok(e)).sort(cmp[state.sort] || cmp.new);
-    const NEW_MS = 3 * 864e5;
+    const base = data.filter(e => e.char === state.char);
     grid.innerHTML = view.map((e, i) => {
       const cover = e.images[0];
       const ph = cover
@@ -103,18 +131,31 @@
     }).join('');
 
     const filtered = state.cat || state.color || state.season || state.q.trim();
-    if (!data.length) {
-      empty.innerHTML = '<h2>Шкаф пока пуст</h2><p>Первая вещь добавляется в админке: фото, категория, цвет. Вешалки скучают.</p><a href="admin.html">Открыть админку</a>';
+    if (!base.length) {
+      empty.innerHTML = '<h2>Здесь пока пусто</h2><p>У этого персонажа ещё нет вещей. Первая добавляется в админке: фото, категория, цвет.</p><a href="admin.html">Открыть админку</a>';
     } else if (!view.length && filtered) {
       empty.innerHTML = '<h2>Тут ничего нет</h2><p>Под такие фильтры вещей не нашлось. Может, она в стирке?</p><button type="button" id="empty-reset" class="reset">Сбросить фильтры</button>';
     }
     empty.hidden = view.length > 0;
-    $('#count').textContent = data.length ? (filtered ? `${view.length} из ${data.length}` : `${data.length} ${plural(data.length)}`) : '';
-    $('#controls').hidden = !data.length;
+    $('#count').textContent = base.length ? (filtered ? `${view.length} из ${base.length}` : `${base.length} ${pl(base.length, THINGS)}`) : '';
+    $('#controls').hidden = !base.length;
     $('#rnd').hidden = !view.length;
   }
 
-  const refresh = () => { renderSpectrum(); renderTabs(); renderGrid(); };
+  function refresh() {
+    const home = state.char === null;
+    $('#crumb').hidden = home;
+    if (home) {
+      $('#spectrum').hidden = true; $('#controls').hidden = true;
+      view = []; renderHome();
+      return;
+    }
+    const c = charById(state.char) || { name: '' };
+    $('#cname').textContent = c.name;
+    $('#cnote').textContent = c.note || '';
+    $('#cnote').hidden = !c.note;
+    renderSpectrum(); renderTabs(); renderGrid();
+  }
 
   bar.addEventListener('click', e => {
     const b = e.target.closest('.seg'); if (!b) return;
@@ -144,12 +185,12 @@
   /* ---------- карточка вещи ---------- */
   let list = [], at = 0;
   function openItem(id) {
-    list = view.some(e => e.id === id) ? view : data;
+    list = view.some(e => e.id === id) ? view : data.filter(e => e.char === state.char);
     at = list.findIndex(e => e.id === id);
     if (at < 0) return;
     drawItem();
     if (!modal.open) modal.showModal();
-    history.replaceState(null, '', location.pathname + location.search + '#' + encodeURIComponent(id));
+    setHash(id);
   }
   function drawItem() {
     const e = list[at], im = e.images;
@@ -177,7 +218,7 @@
   }
   const step = d => {
     at = (at + d + list.length) % list.length; drawItem(); modal.scrollTop = 0;
-    history.replaceState(null, '', location.pathname + location.search + '#' + encodeURIComponent(list[at].id));
+    setHash(list[at].id);
   };
   body.addEventListener('click', e => { const b = e.target.closest('.mnav button'); if (b) step(+b.dataset.d); });
   modal.addEventListener('keydown', e => {
@@ -185,22 +226,47 @@
     if (e.key === 'ArrowLeft') step(-1); else if (e.key === 'ArrowRight') step(1);
   });
   modal.addEventListener('click', e => { if (e.target === modal) modal.close(); });
-  modal.addEventListener('close', () => history.replaceState(null, '', location.pathname + location.search));
-  grid.addEventListener('click', e => { const c = e.target.closest('.item'); if (c) openItem(c.dataset.id); });
-  const fromHash = () => {
+  modal.addEventListener('close', () => setHash(null));
+  grid.addEventListener('click', e => { const c = e.target.closest('.item'); if (c && c.dataset.id) openItem(c.dataset.id); });
+
+  /* ---------- адреса: #персонаж и #персонаж/вещь ---------- */
+  function route() {
     let h = ''; try { h = decodeURIComponent(location.hash.slice(1)); } catch {}
-    if (h && data.some(e => e.id === h)) openItem(h);
-  };
-  addEventListener('hashchange', fromHash);
+    let [cid, iid] = h.split('/');
+    /* старые ссылки вида #вещь */
+    if (cid && !charById(cid)) {
+      const it = data.find(e => e.id === cid);
+      if (it) { iid = it.id; cid = it.char; } else cid = '';
+    }
+    const target = cid || null;
+    if (target !== state.char) {
+      state.char = target;
+      state.cat = state.color = state.season = state.q = ''; $('#q').value = '';
+      intro = true;
+      if (modal.open) modal.close();
+      refresh();
+      window.scrollTo(0, 0);
+    }
+    if (iid && state.char !== null) { if (data.some(e => e.id === iid && e.char === state.char)) openItem(iid); }
+    else if (modal.open) modal.close();
+  }
+  addEventListener('hashchange', route);
 
   /* ---------- загрузка ---------- */
-  fetch('wardrobe.json', { cache: 'no-store' })
+  const getJson = (file, strict) => fetch(file, { cache: 'no-store' })
     .then(r => { if (!r.ok) throw 0; return r.json(); })
-    .then(j => {
-      data = Array.isArray(j) ? j : [];
+    .catch(err => { if (strict) throw err; return null; });
+
+  Promise.all([getJson('wardrobe.json', true), getJson('characters.json', false)])
+    .then(([items, meta]) => {
+      if (meta && typeof meta === 'object') {
+        chars = Array.isArray(meta.characters) ? meta.characters.filter(c => c && c.id) : [];
+        if (Array.isArray(meta.cats)) catsList = meta.cats;
+      }
+      data = Array.isArray(items) ? items : [];
       data.forEach(prep);
-      refresh();
-      fromHash();
+      route();
+      if (state.char === null) refresh();
     })
     .catch(() => {
       empty.innerHTML = '<h2>Список не открылся</h2><p>Если открываешь файл с диска, запусти сайт через GitHub Pages или локальный сервер.</p>';
