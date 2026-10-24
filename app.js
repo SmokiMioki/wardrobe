@@ -98,9 +98,9 @@
 
     const filtered = state.cat || state.color || state.season || state.q.trim();
     if (!data.length) {
-      empty.innerHTML = '<h2>🧦 Шкаф пока пуст</h2><p>Первая вещь добавляется в админке: фото, категория, цвет. Вешалки скучают.</p><a href="admin.html">Открыть админку</a>';
+      empty.innerHTML = '<h2>Шкаф пока пуст</h2><p>Первая вещь добавляется в админке: фото, категория, цвет. Вешалки скучают.</p><a href="admin.html">Открыть админку</a>';
     } else if (!view.length && filtered) {
-      empty.innerHTML = '<h2>🕵️ Тут ничего нет</h2><p>Под такие фильтры вещей не нашлось. Может, она в стирке?</p><button type="button" id="empty-reset" class="reset">Сбросить фильтры</button>';
+      empty.innerHTML = '<h2>Тут ничего нет</h2><p>Под такие фильтры вещей не нашлось. Может, она в стирке?</p><button type="button" id="empty-reset" class="reset">Сбросить фильтры</button>';
     }
     empty.hidden = view.length > 0;
     $('#count').textContent = data.length ? (filtered ? `${view.length} из ${data.length}` : `${data.length} ${plural(data.length)}`) : '';
@@ -197,7 +197,7 @@
       fromHash();
     })
     .catch(() => {
-      empty.innerHTML = '<h2>💥 Список не открылся</h2><p>Если открываешь файл с диска, запусти сайт через GitHub Pages или локальный сервер.</p>';
+      empty.innerHTML = '<h2>Список не открылся</h2><p>Если открываешь файл с диска, запусти сайт через GitHub Pages или локальный сервер.</p>';
       empty.hidden = false;
     });
 })();
