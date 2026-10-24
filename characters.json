@@ -1,5 +1,14 @@
 {
-  "characters": [],
+  "characters": [
+    {
+      "id": "cmvma6shd",
+      "name": "Смокши",
+      "note": "",
+      "added": "2026-10-24T10:53:51.409Z",
+      "cover": "img/cmvma6shd-mvma6shdc.webp",
+      "ar": 1
+    }
+  ],
   "cats": [
     "Old Money"
   ]
