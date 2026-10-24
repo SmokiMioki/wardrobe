@@ -31,6 +31,12 @@
     return 'вещей';
   };
   const seasonText = s => !s || !s.length ? '' : s.length >= C.seasons.length ? 'Всесезон' : s.join(', ');
+  const KANJI = { 'Весна': '春', 'Лето': '夏', 'Осень': '秋', 'Зима': '冬' };
+  const seasonMarks = list => {
+    const k = (list || []).filter(n => KANJI[n]);
+    if (!k.length) return '';
+    return `<span class="ssn" title="${esc(seasonText(list))}">${k.length >= 4 ? '<b class="all">四季</b>' : k.map(n => `<b>${KANJI[n]}</b>`).join('')}</span>`;
+  };
   const dateText = iso => { try { return new Date(iso).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' }); } catch { return ''; } };
 
   function prep(e) {
@@ -93,7 +99,7 @@
         ? `<span class="ph"${e.ar ? ` style="aspect-ratio:${e.ar}"` : ''}><img src="${esc(cover)}" alt="${esc(e.name)}" loading="lazy" decoding="async">${e.images.length > 1 ? `<span class="cnt">${e.images.length}</span>` : ''}</span>`
         : `<span class="ph noimg" style="background:${paint(e.colors[0])}">${esc((e.name || '?').charAt(0).toUpperCase())}</span>`;
       const fresh = e.added && Date.now() - Date.parse(e.added) < NEW_MS;
-      return `<button class="item" type="button" data-id="${esc(e.id)}" style="--i:${Math.min(i, 14)}">${fresh ? '<span class="new">new</span>' : ''}${ph}<span class="nm">${esc(e.name)}</span><span class="sub"><span class="dots">${dots(e.colors)}</span>${esc(e.cat || '')}</span></button>`;
+      return `<button class="item" type="button" data-id="${esc(e.id)}" style="--i:${Math.min(i, 14)}">${fresh ? '<span class="new">new</span>' : ''}${ph}${e.cat ? `<span class="kicker">${esc(e.cat)}</span>` : ''}<span class="nm">${esc(e.name)}</span><span class="sub"><span class="dots">${dots(e.colors)}</span>${seasonMarks(e.seasons)}</span></button>`;
     }).join('');
 
     const filtered = state.cat || state.color || state.season || state.q.trim();
