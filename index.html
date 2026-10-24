@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#ecebf0" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#16171a" media="(prefers-color-scheme: dark)">
+  <title>Гардероб</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500&family=Prata&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="wrap">
+    <header class="top">
+      <h1><a href="./">Гардероб</a></h1>
+      <p class="count" id="count"></p>
+    </header>
+
+    <section class="spectrum" id="spectrum" aria-label="Цвета в гардеробе" hidden>
+      <div class="bar" id="bar"></div>
+      <p class="spectrum-note" id="spec-note"></p>
+    </section>
+
+    <section class="controls" id="controls" aria-label="Фильтры" hidden>
+      <div class="tabs" id="tabs" role="group" aria-label="Категории"></div>
+      <div class="row2">
+        <div class="seasons" id="seasons" role="group" aria-label="Сезон"></div>
+        <input class="find" id="q" type="search" placeholder="Найти вещь" aria-label="Поиск" autocomplete="off" spellcheck="false">
+        <select class="sort" id="sort" aria-label="Порядок">
+          <option value="new">Сначала новые</option>
+          <option value="old">Сначала старые</option>
+          <option value="name">По названию</option>
+        </select>
+        <button class="reset" id="reset" type="button" hidden>Сбросить</button>
+      </div>
+    </section>
+
+    <main>
+      <div class="grid" id="grid"></div>
+      <div class="empty" id="empty" hidden></div>
+    </main>
+  </div>
+
+  <dialog id="modal" aria-label="Вещь">
+    <form method="dialog"><button class="x" aria-label="Закрыть">×</button></form>
+    <div id="modal-body"></div>
+  </dialog>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

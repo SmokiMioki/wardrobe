@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="theme-color" content="#ecebf0" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#16171a" media="(prefers-color-scheme: dark)">
+  <title>Гардероб · админка</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500&family=Prata&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="wrap narrow">
+    <header class="top">
+      <h1><a href="./">Гардероб</a></h1>
+      <nav><a href="./">На сайт</a></nav>
+    </header>
+  </div>
+
+  <main class="admin">
+    <p id="status" class="status" role="status" hidden></p>
+
+    <!-- 1. ВХОД -->
+    <section class="panel" id="p-connect">
+      <h2>Вход</h2>
+      <div class="two">
+        <label class="field">Аккаунт GitHub<input id="owner" placeholder="username" autocapitalize="off" autocorrect="off"></label>
+        <label class="field">Репозиторий<input id="repo" placeholder="wardrobe" autocapitalize="off" autocorrect="off"></label>
+      </div>
+      <div class="two">
+        <label class="field">Ветка<input id="branch" value="main" autocapitalize="off"></label>
+        <label class="field">Токен доступа<input id="token" type="password" placeholder="github_pat_…" autocomplete="off"></label>
+      </div>
+      <label class="check"><input type="checkbox" id="remember" checked> запомнить на этом устройстве</label>
+      <div class="row"><button class="btn" id="connect" type="button">Войти</button></div>
+
+      <details>
+        <summary>Где взять токен</summary>
+        <ol>
+          <li>Открой <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">создание токена</a>.</li>
+          <li>Repository access: <b>Only select repositories</b>, выбери репозиторий гардероба.</li>
+          <li>Permissions, Repository permissions: <b>Contents: Read and write</b>.</li>
+          <li>Generate token, скопируй и вставь сюда.</li>
+        </ol>
+        <p class="small">Токен лежит только в твоём браузере и уходит только на api.github.com. Без него страница ничего не умеет, поэтому посторонние ничего не изменят.</p>
+      </details>
+    </section>
+
+    <!-- 2. ДОБАВИТЬ -->
+    <section class="panel" id="p-add" hidden>
+      <h2 id="form-title">Новая вещь</h2>
+      <form id="form" autocomplete="off">
+        <div class="imgs">
+          <span class="lbl">Фото. Первое станет обложкой, чтобы выбрать другое, нажми на него.</span>
+          <div class="thumbs" id="thumbs"></div>
+          <button class="btn ghost" id="add-img" type="button">Добавить фото</button>
+          <input id="f-files" type="file" accept="image/*" multiple hidden>
+          <p class="small">До 8 фото. Перед загрузкой сжимаются в webp.</p>
+        </div>
+
+        <label class="field" style="margin-top:22px">Название<input id="f-name" required placeholder="Чёрный свитер оверсайз"></label>
+
+        <label class="field">Категория<input id="f-cat" list="cats" required placeholder="Верх"></label>
+        <datalist id="cats"></datalist>
+
+        <div class="pick">
+          <span class="lbl">Цвет. До двух, первый считается основным.</span>
+          <div class="palette" id="palette"></div>
+        </div>
+
+        <div class="pick">
+          <span class="lbl">Сезон</span>
+          <div class="pills" id="seasons"></div>
+        </div>
+
+        <label class="field">Теги через запятую<input id="f-tags" placeholder="оверсайз, шерсть"></label>
+        <div class="sug" id="sug"></div>
+
+        <label class="field">Заметка<textarea id="f-note" rows="3" placeholder="Бренд, размер, где куплено, как стирать"></textarea></label>
+
+        <div class="row">
+          <button class="btn" id="submit" type="submit">Добавить в гардероб</button>
+          <button class="btn ghost" id="cancel" type="button" hidden>Отмена</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- 3. СПИСОК -->
+    <section class="panel" id="p-list" hidden>
+      <h2>В гардеробе <span id="n" class="small"></span></h2>
+      <ul class="list" id="list"></ul>
+      <p class="small">После сохранения сайт обновляется примерно через минуту.</p>
+    </section>
+  </main>
+
+  <script src="config.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>
