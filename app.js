@@ -86,23 +86,26 @@
   /* ---------- сетка ---------- */
   function renderGrid() {
     view = data.filter(e => ok(e)).sort(cmp[state.sort] || cmp.new);
-    grid.innerHTML = view.map(e => {
+    const NEW_MS = 3 * 864e5;
+    grid.innerHTML = view.map((e, i) => {
       const cover = e.images[0];
       const ph = cover
         ? `<span class="ph"${e.ar ? ` style="aspect-ratio:${e.ar}"` : ''}><img src="${esc(cover)}" alt="${esc(e.name)}" loading="lazy" decoding="async">${e.images.length > 1 ? `<span class="cnt">${e.images.length}</span>` : ''}</span>`
         : `<span class="ph noimg" style="background:${paint(e.colors[0])}">${esc((e.name || '?').charAt(0).toUpperCase())}</span>`;
-      return `<button class="item" type="button" data-id="${esc(e.id)}">${ph}<span class="nm">${esc(e.name)}</span><span class="sub"><span class="dots">${dots(e.colors)}</span>${esc(e.cat || '')}</span></button>`;
+      const fresh = e.added && Date.now() - Date.parse(e.added) < NEW_MS;
+      return `<button class="item" type="button" data-id="${esc(e.id)}" style="--i:${Math.min(i, 14)}">${fresh ? '<span class="new">new</span>' : ''}${ph}<span class="nm">${esc(e.name)}</span><span class="sub"><span class="dots">${dots(e.colors)}</span>${esc(e.cat || '')}</span></button>`;
     }).join('');
 
     const filtered = state.cat || state.color || state.season || state.q.trim();
     if (!data.length) {
-      empty.innerHTML = '<h2>Здесь пока пусто</h2><p>Первая вещь добавляется в админке: фото, категория, цвет.</p><a href="admin.html">Открыть админку</a>';
+      empty.innerHTML = '<h2>🧦 Шкаф пока пуст</h2><p>Первая вещь добавляется в админке: фото, категория, цвет. Вешалки скучают.</p><a href="admin.html">Открыть админку</a>';
     } else if (!view.length && filtered) {
-      empty.innerHTML = '<h2>Ничего не нашлось</h2><p>Под такие фильтры вещей нет.</p><button type="button" id="empty-reset" class="reset">Сбросить фильтры</button>';
+      empty.innerHTML = '<h2>🕵️ Тут ничего нет</h2><p>Под такие фильтры вещей не нашлось. Может, она в стирке?</p><button type="button" id="empty-reset" class="reset">Сбросить фильтры</button>';
     }
     empty.hidden = view.length > 0;
     $('#count').textContent = data.length ? (filtered ? `${view.length} из ${data.length}` : `${data.length} ${plural(data.length)}`) : '';
     $('#controls').hidden = !data.length;
+    $('#rnd').hidden = !view.length;
   }
 
   const refresh = () => { renderSpectrum(); renderTabs(); renderGrid(); };
@@ -121,6 +124,7 @@
   });
   const resetAll = () => { state.cat = state.color = state.season = state.q = ''; $('#q').value = ''; refresh(); };
   resetBtn.addEventListener('click', resetAll);
+  $('#rnd').addEventListener('click', () => { if (view.length) openItem(view[Math.floor(Math.random() * view.length)].id); });
   empty.addEventListener('click', e => { if (e.target.id === 'empty-reset') resetAll(); });
   $('#q').addEventListener('input', e => { state.q = e.target.value; refresh(); });
   try { const sv = localStorage.getItem('wardrobe-sort'); if (sv && cmp[sv]) state.sort = sv; } catch {}
@@ -193,7 +197,7 @@
       fromHash();
     })
     .catch(() => {
-      empty.innerHTML = '<h2>Список не открылся</h2><p>Если открываешь файл с диска, запусти сайт через GitHub Pages или локальный сервер.</p>';
+      empty.innerHTML = '<h2>💥 Список не открылся</h2><p>Если открываешь файл с диска, запусти сайт через GitHub Pages или локальный сервер.</p>';
       empty.hidden = false;
     });
 })();

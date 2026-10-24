@@ -4,15 +4,16 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex">
-  <meta name="theme-color" content="#ecebf0" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#16171a" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#fff3dc" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#18121f" media="(prefers-color-scheme: dark)">
   <title>Гардероб</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500&family=Prata&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@800;900&family=Onest:wght@500;600;700;800&family=Caveat:wght@600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <div class="ticker" aria-hidden="true"><div class="track"><span>носи ярко ✦ что сегодня надеть? ✦ шкаф без дна ✦ всё по полочкам ✦ нечего надеть (но есть что) ✦ ещё одна чёрная футболка? ✦ каждой вещи своё место ✦ образ дня уже тут ✦ </span><span>носи ярко ✦ что сегодня надеть? ✦ шкаф без дна ✦ всё по полочкам ✦ нечего надеть (но есть что) ✦ ещё одна чёрная футболка? ✦ каждой вещи своё место ✦ образ дня уже тут ✦ </span></div></div>
   <div class="wrap">
     <header class="top">
       <h1><a href="./">Гардероб</a></h1>
@@ -28,12 +29,13 @@
       <div class="tabs" id="tabs" role="group" aria-label="Категории"></div>
       <div class="row2">
         <div class="seasons" id="seasons" role="group" aria-label="Сезон"></div>
-        <input class="find" id="q" type="search" placeholder="Найти вещь" aria-label="Поиск" autocomplete="off" spellcheck="false">
+        <input class="find" id="q" type="search" placeholder="🔎 Найти вещь" aria-label="Поиск" autocomplete="off" spellcheck="false">
         <select class="sort" id="sort" aria-label="Порядок">
           <option value="new">Сначала новые</option>
           <option value="old">Сначала старые</option>
           <option value="name">По названию</option>
         </select>
+        <button class="rnd" id="rnd" type="button" title="Случайная вещь">🎲 Что надеть?</button>
         <button class="reset" id="reset" type="button" hidden>Сбросить</button>
       </div>
     </section>
