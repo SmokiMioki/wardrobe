@@ -25,7 +25,12 @@
   }
   const fileApi = p => `/repos/${cfg.owner}/${cfg.repo}/contents/${p.split('/').map(encodeURIComponent).join('/')}`;
   const blobB64 = b => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1]); r.onerror = rej; r.readAsDataURL(b); });
-  const errText = async (r, fallback) => { let m = ''; try { m = (await r.json()).message; } catch {} return m || fallback; };
+  const errText = async (r, fallback) => {
+    let m = ''; try { m = (await r.json()).message; } catch {}
+    if (/not accessible|bad credentials|requires authentication/i.test(m || '') || r.status === 401 || r.status === 403)
+      return 'У токена нет прав на запись в этот репозиторий. Нужно: Repository access включает ' + (cfg.repo || 'репозиторий') + ' и Contents: Read and write. Аккаунт-владелец токена должен быть ' + (cfg.owner || 'тот же, что у репозитория') + '.';
+    return m || fallback;
+  };
 
   /* ---------- цвета и сезоны ---------- */
   function renderPalette() {
