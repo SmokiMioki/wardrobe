@@ -14,6 +14,8 @@
 
   const grid = $('#grid'), empty = $('#empty'), modal = $('#modal'), body = $('#modal-body');
   const bar = $('#bar'), tabs = $('#tabs'), seasonsEl = $('#seasons'), resetBtn = $('#reset'), sortSel = $('#sort');
+  const wrapEl = $('#wrap'), watchEl = $('#watch'), guideEl = $('#guide'), crumbEl = $('#crumb');
+  const yt = () => document.documentElement.dataset.style === 'youtube';   // стиль YouTube: плейлисты и страница просмотра
 
   /* ---------- цвета ---------- */
   const hexOf = n => C.colors[n];
@@ -25,7 +27,8 @@
     return r * .299 + g * .587 + b * .114 > 150;
   };
   /* фон-размытие для превью 16:9 (используется только в стиле YouTube) */
-  const bgVar = src => `--bg:url("${String(src).replace(/["\\()\s]/g, ch => '%' + ch.charCodeAt(0).toString(16).toUpperCase().padStart(2, '0'))}")`;
+  const bgUrl = src => `url("${String(src).replace(/["\\()\s]/g, ch => '%' + ch.charCodeAt(0).toString(16).toUpperCase().padStart(2, '0'))}")`;
+  const bgVar = src => `--bg:${bgUrl(src)}`;
   const phStyle = (ar, src) => {
     const s = [ar ? `aspect-ratio:${ar}` : '', src ? bgVar(src) : ''].filter(Boolean).join(';');
     return s ? ` style="${esc(s)}"` : '';
@@ -77,9 +80,10 @@
     const list = allChars();
     grid.innerHTML = list.map((c, i) => {
       const n = data.filter(e => e.char === c.id).length;
+      const badge = `<span class="plbadge">${n} ${pl(n, THINGS)}</span>`;
       const ph = c.cover
-        ? `<span class="ph"${phStyle(c.ar, c.cover)}><img src="${esc(c.cover)}" alt="${esc(c.name)}" loading="lazy" decoding="async"></span>`
-        : `<span class="ph noimg" style="background:linear-gradient(160deg,#ffd9de,#f3a6b0)">${esc((c.name || '?').charAt(0).toUpperCase())}</span>`;
+        ? `<span class="ph"${phStyle(c.ar, c.cover)}><img src="${esc(c.cover)}" alt="${esc(c.name)}" loading="lazy" decoding="async">${badge}</span>`
+        : `<span class="ph noimg" style="background:linear-gradient(160deg,#ffd9de,#f3a6b0)">${esc((c.name || '?').charAt(0).toUpperCase())}${badge}</span>`;
       return `<a class="item char" href="${hashOf(c.id) || '#'}" style="--i:${Math.min(i, 14)}">${ph}<span class="kicker">${n} ${pl(n, THINGS)}</span><span class="nm">${esc(c.name)}</span>${c.note ? `<span class="cnote">${esc(c.note)}</span>` : ''}</a>`;
     }).join('');
     empty.innerHTML = '<h2>Здесь пока нет персонажей</h2><p>Первого персонажа можно создать в админке. Потом в ней же появятся категории и вещи.</p><a href="admin.html">Открыть админку</a>';
@@ -130,7 +134,7 @@
       const fresh = e.added && Date.now() - Date.parse(e.added) < NEW_MS;
       const av = `<span class="av${isLight(e.colors[0]) ? ' lt' : ''}" style="background:${paint(e.colors[0])}" aria-hidden="true">${esc((e.name || '?').charAt(0).toUpperCase())}</span>`;
       const cl = e.cat ? `<span class="cl">${esc(e.cat)}</span>` : '';
-      return `<button class="item" type="button" data-id="${esc(e.id)}" style="--i:${Math.min(i, 14)}">${fresh ? '<span class="new">new</span>' : ''}${ph}${av}<span class="nm">${esc(e.name)}</span><span class="sub">${cl}${seasonMarks(e.seasons)}<span class="dots">${dots(e.colors)}</span></span></button>`;
+      return `<button class="item" type="button" data-id="${esc(e.id)}" style="--i:${Math.min(i, 14)}">${fresh ? '<span class="new">new</span>' : ''}<span class="ix">${i + 1}</span>${ph}${av}<span class="nm">${esc(e.name)}</span><span class="sub">${cl}${seasonMarks(e.seasons)}<span class="dots">${dots(e.colors)}</span></span></button>`;
     }).join('');
 
     const filtered = state.cat || state.color || state.season || state.q.trim();
@@ -145,10 +149,21 @@
     $('#rnd').hidden = !view.length;
   }
 
+  /* боковое меню YouTube: «Главная» и плейлисты (персонажи) */
+  const initial = n => esc((n || '?').charAt(0).toUpperCase());
+  function renderGuide() {
+    const home = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M4 10.5L12 4l8 6.5V20h-5v-6H9v6H4z"/></svg>';
+    guideEl.innerHTML = `<a class="g-i${state.char === null ? ' on' : ''}" href="#">${home}<span class="g-n">Главная</span></a>`
+      + (allChars().length ? '<p class="g-h">Плейлисты</p>' : '')
+      + allChars().map(c => `<a class="g-i${state.char === c.id ? ' on' : ''}" href="${hashOf(c.id)}"><span class="g-a"${c.cover ? ` style="${esc(bgVar(c.cover))}"` : ''}>${c.cover ? '' : initial(c.name)}</span><span class="g-n">${esc(c.name)}</span></a>`).join('');
+  }
+
   function refresh() {
     const home = state.char === null;
     $('#crumb').hidden = home;
     $('#search').hidden = home;
+    wrapEl.classList.toggle('char-page', !home);
+    renderGuide();
     if (home) {
       $('#spectrum').hidden = true; $('#controls').hidden = true;
       view = []; renderHome();
@@ -158,6 +173,12 @@
     $('#cname').textContent = c.name;
     $('#cnote').textContent = c.note || '';
     $('#cnote').hidden = !c.note;
+    /* шапка плейлиста (видна только в стиле YouTube) */
+    const total = data.filter(e => e.char === state.char).length;
+    $('#pl-meta').textContent = `Плейлист • ${total} ${pl(total, THINGS)}`;
+    $('#pl-cover').hidden = !c.cover;
+    if (c.cover) { $('#pl-img').src = c.cover; crumbEl.style.setProperty('--bg', bgUrl(c.cover)); }
+    else crumbEl.style.removeProperty('--bg');
     renderSpectrum(); renderTabs(); renderGrid();
   }
 
@@ -175,9 +196,15 @@
   });
   const resetAll = () => { state.cat = state.color = state.season = state.q = ''; $('#q').value = ''; refresh(); };
   resetBtn.addEventListener('click', resetAll);
-  $('#rnd').addEventListener('click', () => { if (view.length) openItem(view[Math.floor(Math.random() * view.length)].id); });
+  /* открыть вещь: в стиле YouTube это переход по адресу (работает кнопка «назад»), в Pinterest — окно */
+  const go = id => { if (yt()) location.hash = hashOf(state.char, id); else openItem(id); };
+  $('#rnd').addEventListener('click', () => { if (view.length) go(view[Math.floor(Math.random() * view.length)].id); });
   empty.addEventListener('click', e => { if (e.target.id === 'empty-reset') resetAll(); });
-  $('#q').addEventListener('input', e => { state.q = e.target.value; refresh(); });
+  $('#q').addEventListener('input', e => {
+    state.q = e.target.value;
+    if (!watchEl.hidden) location.hash = hashOf(state.char);   // поиск с «видео» ведёт обратно в плейлист
+    refresh();
+  });
   try { const sv = localStorage.getItem('wardrobe-sort'); if (sv && cmp[sv]) state.sort = sv; } catch {}
   sortSel.value = state.sort;
   sortSel.addEventListener('change', () => {
@@ -192,10 +219,105 @@
     list = view.some(e => e.id === id) ? view : data.filter(e => e.char === state.char);
     at = list.findIndex(e => e.id === id);
     if (at < 0) return;
-    drawItem();
-    if (!modal.open) modal.showModal();
+    if (yt()) {
+      if (modal.open) modal.close();
+      showWatch();
+    } else {
+      closeWatch();
+      drawItem();
+      if (!modal.open) modal.showModal();
+    }
     setHash(id);
   }
+
+  /* ---------- стиль YouTube: страница просмотра ---------- */
+  let wi = 0;                          // номер фото в «плеере»
+  const baseTitle = document.title;
+  const dateShort = iso => { try { return new Date(iso).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' }); } catch { return ''; } };
+  const avaOf = c => c && c.cover
+    ? `<span class="yt-ava" style="${esc(bgVar(c.cover))}"></span>`
+    : `<span class="yt-ava" style="background:linear-gradient(160deg,#ff8a9a,#c2185b)">${initial(c && c.name)}</span>`;
+  /* строка списка: плейлист справа от плеера и рекомендации */
+  const ytRow = (e, cls, lead) => {
+    const c = charById(e.char), cover = e.images[0];
+    const ph = cover
+      ? `<span class="ph"${phStyle(e.ar, cover)}><img src="${esc(cover)}" alt="" loading="lazy" decoding="async">${e.images.length > 1 ? `<span class="cnt">${e.images.length}</span>` : ''}</span>`
+      : `<span class="ph noimg" style="background:${paint(e.colors[0])}">${initial(e.name)}</span>`;
+    return `<a class="yt-row${cls}" href="${hashOf(e.char, e.id)}">${lead}${ph}<span class="r-t"><b class="r-n">${esc(e.name)}</b><span class="r-m">${esc(c ? c.name : '')}${e.cat ? ' • ' + esc(e.cat) : ''}</span><span class="r-m dots">${dots(e.colors)}</span></span></a>`;
+  };
+
+  function showWatch() {
+    const e = list[at]; if (!e) return;
+    const c = charById(e.char), im = e.images, n = list.length;
+    const mates = data.filter(x => x.char === e.char).length;
+    wi = 0;
+
+    const player = `<div class="yt-player" style="${esc(im.length ? bgVar(im[0]) : 'background:' + paint(e.colors[0]))}">`
+      + (im.length ? `<img id="wimg" src="${esc(im[0])}" alt="${esc(e.name)}">` : `<span class="yt-noimg">${initial(e.name)}</span>`)
+      + (im.length > 1 ? `<button class="yt-arrow l" type="button" data-p="-1" aria-label="Предыдущее фото">‹</button><button class="yt-arrow r" type="button" data-p="1" aria-label="Следующее фото">›</button><div class="yt-prog">${im.map((_, k) => `<button type="button" data-k="${k}" class="${k ? '' : 'on'}" aria-label="Фото ${k + 1}"></button>`).join('')}</div>` : '')
+      + '</div>';
+
+    const meta = [e.added ? dateShort(e.added) : '', e.cat, seasonText(e.seasons)].filter(Boolean);
+    const long = (e.note || '').length > 160;
+    const desc = `<div class="yt-desc${long ? '' : ' open'}"><p class="d-h">${meta.map(esc).join(' • ') || 'Без описания'}</p>`
+      + (e.colors.length ? `<p class="d-c">${e.colors.map(k => `<span><i class="dot" style="background:${paint(k)}"></i>${esc(k)}</span>`).join('')}</p>` : '')
+      + (e.note ? `<p class="d-body">${esc(e.note)}</p>` : '')
+      + (e.tags.length ? `<p class="d-t">${e.tags.map(t => '#' + esc(String(t).replace(/^#/, ''))).join(' ')}</p>` : '')
+      + (long ? '<button type="button" class="d-more">…ещё</button>' : '') + '</div>';
+
+    const plHref = hashOf(e.char) || '#';
+    const chan = `<div class="yt-chan"><a href="${plHref}" aria-label="Плейлист">${avaOf(c)}</a><a class="yt-cn" href="${plHref}"><b>${esc(c ? c.name : '')}</b><span>${mates} ${pl(mates, THINGS)}</span></a><a class="yt-sub" href="${plHref}">Открыть плейлист</a>`
+      + (n > 1 ? '<span class="yt-grp"><button type="button" data-d="-1">‹ Назад</button><button type="button" data-d="1">Дальше ›</button></span>' : '') + '</div>';
+
+    /* панель плейлиста: все вещи персонажа, текущая подсвечена */
+    const plist = n > 1
+      ? `<section class="yt-pl"><header><b>${esc(c ? c.name : '')}</b><span>${at + 1} / ${n}</span></header><div class="yt-pl-list">${list.map((x, k) => ytRow(x, k === at ? ' on' : '', `<span class="r-i">${k === at ? '▶' : k + 1}</span>`)).join('')}</div></section>`
+      : '';
+
+    /* рекомендации: другие наряды, похожие по категории, цветам и сезону идут первыми */
+    const skip = new Set(list.map(x => x.id));
+    const score = x => (e.cat && x.cat === e.cat ? 3 : 0) + x.colors.filter(k => e.colors.includes(k)).length * 2 + x.seasons.filter(k => e.seasons.includes(k)).length;
+    const recs = data.filter(x => !skip.has(x.id)).sort((a, b) => score(b) - score(a) || cmp.new(a, b)).slice(0, 24);
+    const recHtml = recs.length ? `<h3 class="yt-h">Другие наряды</h3><div class="yt-recs">${recs.map(x => ytRow(x, '', '')).join('')}</div>` : '';
+
+    watchEl.innerHTML = `<div class="yt-main">${player}<h1 class="yt-title">${esc(e.name)}</h1>${chan}${desc}</div><aside class="yt-side">${plist}${recHtml}</aside>`;
+    watchEl.hidden = false;
+    wrapEl.classList.add('watching');
+    document.title = `${e.name} — ${baseTitle}`;
+    window.scrollTo(0, 0);
+  }
+  function closeWatch() {
+    if (watchEl.hidden) return;
+    watchEl.hidden = true; watchEl.innerHTML = '';
+    wrapEl.classList.remove('watching');
+    document.title = baseTitle;
+  }
+  function photo(k) {
+    const e = list[at], m = e && e.images.length; if (!m) return;
+    wi = (k + m) % m;
+    $('#wimg').src = e.images[wi];
+    $('.yt-player', watchEl).style.setProperty('--bg', bgUrl(e.images[wi]));
+    watchEl.querySelectorAll('.yt-prog button').forEach((b, j) => b.classList.toggle('on', j <= wi));
+  }
+  watchEl.addEventListener('click', ev => {
+    const p = ev.target.closest('[data-p]'); if (p) return photo(wi + +p.dataset.p);
+    const k = ev.target.closest('.yt-prog [data-k]'); if (k) return photo(+k.dataset.k);
+    const d = ev.target.closest('.yt-grp [data-d]');
+    if (d) { const t = list[(at + +d.dataset.d + list.length) % list.length]; location.hash = hashOf(t.char, t.id); return; }
+    const box = ev.target.closest('.yt-desc');
+    if (box && box.querySelector('.d-more') && !ev.target.closest('a')) box.classList.toggle('open');
+  });
+  document.addEventListener('keydown', ev => {
+    if (watchEl.hidden || /^(INPUT|TEXTAREA|SELECT)$/.test(ev.target.tagName)) return;
+    if (ev.key === 'ArrowLeft') photo(wi - 1); else if (ev.key === 'ArrowRight') photo(wi + 1);
+  });
+  /* смена стиля при открытой вещи: показать её в новом виде */
+  addEventListener('wardrobe-style', () => {
+    const e = (modal.open || !watchEl.hidden) ? list[at] : null;
+    if (modal.open) modal.close();
+    closeWatch();
+    if (e) openItem(e.id);
+  });
   function drawItem() {
     const e = list[at], im = e.images;
     const gal = im.length
@@ -230,8 +352,8 @@
     if (e.key === 'ArrowLeft') step(-1); else if (e.key === 'ArrowRight') step(1);
   });
   modal.addEventListener('click', e => { if (e.target === modal) modal.close(); });
-  modal.addEventListener('close', () => setHash(null));
-  grid.addEventListener('click', e => { const c = e.target.closest('.item'); if (c && c.dataset.id) openItem(c.dataset.id); });
+  modal.addEventListener('close', () => { if (!yt()) setHash(null); });
+  grid.addEventListener('click', e => { const c = e.target.closest('.item'); if (c && c.dataset.id) go(c.dataset.id); });
 
   /* ---------- адреса: #персонаж и #персонаж/вещь ---------- */
   function route() {
@@ -248,11 +370,12 @@
       state.cat = state.color = state.season = state.q = ''; $('#q').value = '';
       intro = true;
       if (modal.open) modal.close();
+      closeWatch();
       refresh();
       window.scrollTo(0, 0);
     }
     if (iid && state.char !== null) { if (data.some(e => e.id === iid && e.char === state.char)) openItem(iid); }
-    else if (modal.open) modal.close();
+    else { if (modal.open) modal.close(); closeWatch(); }
   }
   addEventListener('hashchange', route);
 

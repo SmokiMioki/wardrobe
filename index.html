@@ -8,7 +8,7 @@
 
   <title>Гардероб</title>
   <script>try{var t=localStorage.getItem('wardrobe-theme')||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');document.documentElement.dataset.theme=t;}catch(e){}try{document.documentElement.dataset.style=localStorage.getItem('wardrobe-style')==='youtube'?'youtube':'pinterest';}catch(e){document.documentElement.dataset.style='pinterest';}</script>
-  <link rel="stylesheet" href="style.css?v=4">
+  <link rel="stylesheet" href="style.css?v=5">
 </head>
 <body>
   <header class="top">
@@ -22,12 +22,18 @@
     </div>
   </header>
 
-  <div class="wrap">
+  <nav class="guide" id="guide" aria-label="Плейлисты"></nav>
+
+  <div class="wrap" id="wrap">
     <div class="crumb" id="crumb" hidden>
       <a class="back" href="#">Все персонажи</a>
+      <span class="pl-cover" id="pl-cover" hidden><img id="pl-img" alt=""></span>
       <h2 id="cname"></h2>
+      <p class="pl-meta" id="pl-meta"></p>
       <p class="cnote" id="cnote" hidden></p>
     </div>
+
+    <section class="watch" id="watch" aria-label="Просмотр" hidden></section>
 
     <section class="spectrum" id="spectrum" aria-label="Цвета в гардеробе" hidden>
       <div class="bar" id="bar"></div>
@@ -60,7 +66,7 @@
   </dialog>
 
   <script src="config.js?v=3"></script>
-  <script src="app.js?v=4"></script>
-  <script src="theme.js?v=4"></script>
+  <script src="app.js?v=5"></script>
+  <script src="theme.js?v=5"></script>
 </body>
 </html>

@@ -39,6 +39,7 @@
       const b = e.target.closest('[data-pick]'); if (!b) return;
       applyStyle(b.dataset.pick);
       try { localStorage.setItem('wardrobe-style', root.dataset.style); } catch {}
+      window.dispatchEvent(new Event('wardrobe-style'));
       close(true);
     });
     document.addEventListener('click', e => { if (!menu.hidden && !e.target.closest('.stylewrap')) close(false); });
