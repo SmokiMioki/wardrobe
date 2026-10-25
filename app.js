@@ -36,12 +36,7 @@
   const THINGS = ['вещь', 'вещи', 'вещей'];
   const PEOPLE = ['персонаж', 'персонажа', 'персонажей'];
   const seasonText = s => !s || !s.length ? '' : s.length >= C.seasons.length ? 'Всесезон' : s.join(', ');
-  const KANJI = { 'Весна': '春', 'Лето': '夏', 'Осень': '秋', 'Зима': '冬' };
-  const seasonMarks = list => {
-    const k = (list || []).filter(n => KANJI[n]);
-    if (!k.length) return '';
-    return `<span class="ssn" title="${esc(seasonText(list))}">${k.length >= 4 ? '<b class="all">四季</b>' : k.map(n => `<b>${KANJI[n]}</b>`).join('')}</span>`;
-  };
+  const seasonMarks = list => list && list.length ? `<span class="ssn">${esc(seasonText(list))}</span>` : '';
   const dateText = iso => { try { return new Date(iso).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' }); } catch { return ''; } };
   const NEW_MS = 3 * 864e5;
 
@@ -78,7 +73,7 @@
       const n = data.filter(e => e.char === c.id).length;
       const ph = c.cover
         ? `<span class="ph"${c.ar ? ` style="aspect-ratio:${c.ar}"` : ''}><img src="${esc(c.cover)}" alt="${esc(c.name)}" loading="lazy" decoding="async"></span>`
-        : `<span class="ph noimg" style="background:linear-gradient(160deg,#6e1020,#2a0d16)">${esc((c.name || '?').charAt(0).toUpperCase())}</span>`;
+        : `<span class="ph noimg" style="background:linear-gradient(160deg,#ffd9de,#f3a6b0)">${esc((c.name || '?').charAt(0).toUpperCase())}</span>`;
       return `<a class="item char" href="${hashOf(c.id) || '#'}" style="--i:${Math.min(i, 14)}">${ph}<span class="kicker">${n} ${pl(n, THINGS)}</span><span class="nm">${esc(c.name)}</span>${c.note ? `<span class="cnote">${esc(c.note)}</span>` : ''}</a>`;
     }).join('');
     empty.innerHTML = '<h2>Здесь пока нет персонажей</h2><p>Первого персонажа можно создать в админке. Потом в ней же появятся категории и вещи.</p><a href="admin.html">Открыть админку</a>';
@@ -124,10 +119,10 @@
     grid.innerHTML = view.map((e, i) => {
       const cover = e.images[0];
       const ph = cover
-        ? `<span class="ph"${e.ar ? ` style="aspect-ratio:${e.ar}"` : ''}><img src="${esc(cover)}" alt="${esc(e.name)}" loading="lazy" decoding="async">${e.images.length > 1 ? `<span class="cnt">${e.images.length}</span>` : ''}</span>`
+        ? `<span class="ph"${e.ar ? ` style="aspect-ratio:${e.ar}"` : ''}><img src="${esc(cover)}" alt="${esc(e.name)}" loading="lazy" decoding="async"><span class="pin">Открыть</span>${e.images.length > 1 ? `<span class="cnt">${e.images.length}</span>` : ''}</span>`
         : `<span class="ph noimg" style="background:${paint(e.colors[0])}">${esc((e.name || '?').charAt(0).toUpperCase())}</span>`;
       const fresh = e.added && Date.now() - Date.parse(e.added) < NEW_MS;
-      return `<button class="item" type="button" data-id="${esc(e.id)}" style="--i:${Math.min(i, 14)}">${fresh ? '<span class="new">new</span>' : ''}${ph}${e.cat ? `<span class="kicker">${esc(e.cat)}</span>` : ''}<span class="nm">${esc(e.name)}</span><span class="sub"><span class="dots">${dots(e.colors)}</span>${seasonMarks(e.seasons)}</span></button>`;
+      return `<button class="item" type="button" data-id="${esc(e.id)}" style="--i:${Math.min(i, 14)}">${fresh ? '<span class="new">new</span>' : ''}${ph}<span class="nm">${esc(e.name)}</span><span class="sub"><span class="dots">${dots(e.colors)}</span>${seasonMarks(e.seasons)}</span></button>`;
     }).join('');
 
     const filtered = state.cat || state.color || state.season || state.q.trim();
@@ -145,6 +140,7 @@
   function refresh() {
     const home = state.char === null;
     $('#crumb').hidden = home;
+    $('#search').hidden = home;
     if (home) {
       $('#spectrum').hidden = true; $('#controls').hidden = true;
       view = []; renderHome();
