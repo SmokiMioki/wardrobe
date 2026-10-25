@@ -856,6 +856,66 @@ details a{color:var(--red)}
   :root[data-style="vk"] a.item.char{grid-template-columns:80px minmax(0,1fr)}
 }
 
+/* ============================================================
+   СТЕНА (только в стиле «ВКонтакте»): записи, комментарии, граффити
+   ============================================================ */
+.wall{display:none}
+:root[data-style="vk"] .wall{display:block;margin-top:12px;border:1px solid var(--line);background:var(--elev)}
+.w-h{display:flex;justify-content:space-between;padding:6px 10px;border-bottom:1px solid var(--line);background:var(--chip);color:var(--lnk);font-size:.75rem;font-weight:700}
+.w-count{color:var(--mute);font-weight:400}
+.w-form{padding:10px;border-bottom:1px solid var(--line)}
+.w-name,.w-text,.w-rf input{border:1px solid var(--edge);border-radius:0;outline:0;background:var(--paper);color:var(--ink);font:inherit;font-size:.85rem;padding:5px 7px}
+.w-name:focus,.w-text:focus,.w-rf input:focus{border-color:var(--lnk)}
+.w-name{display:block;width:220px;max-width:100%;margin-bottom:6px}
+.w-text{display:block;width:100%;min-height:52px;resize:vertical}
+.w-bar{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin-top:8px}
+.w-btn{height:24px;padding:0 14px;border:0;border-radius:2px;background:var(--red);color:var(--on-red);font-size:.75rem;font-weight:700}
+.w-btn:hover{background:var(--red-d)}
+.w-btn:disabled{opacity:.5;cursor:default}
+.w-lnk{padding:0;border:0;background:none;color:var(--lnk);font-size:.75rem}
+.w-lnk:hover{text-decoration:underline}
+.w-lnk:disabled{opacity:.5}
+.w-where{margin-left:auto;color:var(--mute);font-size:.7rem}
+.w-msg{margin-top:8px;padding:6px 8px;background:var(--chip);font-size:.75rem}
+.w-msg.bad{background:#fde8e8;color:#9e1212}
+:root[data-theme="dark"] .w-msg.bad{background:#3a1717;color:#ff9a9a}
+.w-att{display:flex;align-items:flex-end;gap:10px;margin-top:8px}
+.w-att img{max-width:240px;max-height:120px;border:1px solid var(--edge);background:#fff}
+
+/* редактор граффити */
+.gf{margin-top:8px;padding:8px;border:1px solid var(--edge);background:var(--surface)}
+.gf-tools{display:flex;flex-wrap:wrap;gap:6px 12px;margin-bottom:8px}
+.gf-grp{display:inline-flex;flex-wrap:wrap;gap:3px}
+.gf-grp button{height:22px;padding:0 8px;border:1px solid var(--edge);border-radius:2px;background:var(--paper);color:var(--lnk);font-size:.7rem}
+.gf-grp button.on{border-color:var(--lnk);background:var(--lnk);color:#fff}
+.gf-colors button{width:20px;height:20px;padding:0;border:1px solid rgba(0,0,0,.35)}
+.gf-colors button.on{outline:2px solid var(--lnk);outline-offset:1px}
+.gf-cv{display:block;width:100%;max-width:580px;height:auto;aspect-ratio:800/340;border:1px solid var(--edge);background:#fff;cursor:crosshair;touch-action:none}
+.gf-foot{display:flex;align-items:center;gap:14px;margin-top:8px}
+
+/* записи и комментарии */
+.w-list{padding:0 10px}
+.w-empty{padding:18px 0;color:var(--mute);text-align:center}
+.w-post{display:flex;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+.w-post:first-child{border-top:0}
+.w-ava{display:grid;place-items:center;flex:none;width:50px;height:50px;color:#fff;font:700 1.2rem var(--ui)}
+.w-rp .w-ava{width:32px;height:32px;font-size:.9rem}
+.w-body{flex:1;min-width:0}
+.w-au{color:var(--lnk);font-size:.8rem}
+.w-loc{margin-left:6px;color:var(--mute);font-size:.68rem;font-style:normal}
+.w-tx{margin-top:3px;font-size:.85rem;white-space:pre-wrap;overflow-wrap:anywhere}
+.w-img{display:block;max-width:100%;margin-top:6px;border:1px solid var(--edge);background:#fff}
+.w-meta{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:4px;color:var(--mute);font-size:.7rem}
+.w-reps{margin-top:8px;padding:4px 8px;border-left:2px solid var(--line);background:var(--surface)}
+.w-rp{display:flex;gap:8px;padding:5px 0}
+.w-rf{display:flex;gap:6px;margin-top:8px}
+.w-rf input{flex:1;min-width:0}
+@media (max-width:600px){
+  .w-name{width:100%}
+  .w-where{margin-left:0}
+  .w-ava{width:40px;height:40px}
+}
+
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation:none!important;transition:none!important}
 }

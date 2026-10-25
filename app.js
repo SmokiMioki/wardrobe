@@ -170,6 +170,7 @@
     if (home) {
       $('#spectrum').hidden = true; $('#controls').hidden = true;
       view = []; renderHome();
+      if (window.WallUI) WallUI.hide();
       return;
     }
     const c = charById(state.char) || { name: '' };
@@ -183,6 +184,7 @@
     if (c.cover) { $('#pl-img').src = c.cover; crumbEl.style.setProperty('--bg', bgUrl(c.cover)); }
     else crumbEl.style.removeProperty('--bg');
     renderSpectrum(); renderTabs(); renderGrid();
+    if (window.WallUI) WallUI.show(state.char);   // стена видна только в стиле «ВКонтакте»
   }
 
   bar.addEventListener('click', e => {
