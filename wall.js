@@ -12,7 +12,8 @@
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const vk = () => root.dataset.style === 'vk';
   const pl = (n, [a, b, c]) => { const x = n % 10, y = n % 100; return x === 1 && y !== 11 ? a : x >= 2 && x <= 4 && (y < 12 || y > 14) ? b : c; };
-  const safeImg = s => /^img\/[\w.-]+$/.test(s || '') || /^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(s || '') ? s : '';
+  const API = () => String((window.WARDROBE && window.WARDROBE.wallApi) || '').trim();   // адрес воркера для записей гостей
+  const safeImg = s => /^(?:img|wall)\/[\w.-]+$/.test(s || '') || /^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(s || '') ? s : '';
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
 
   const store = {
@@ -59,13 +60,13 @@
     }
   }
   async function putImage(blob, id) {
-    const c = admin(), path = `img/wall-${id}.png`;
+    const c = admin(), path = `wall/${id}.png`;
     const r = await gh(c, fileApi(c, path), { method: 'PUT', body: JSON.stringify({ message: 'Граффити на стене', content: await blobB64(blob), branch: c.branch || 'main' }) });
     if (!r.ok) throw await fail(r, 'Граффити не загрузилось');
     return path;
   }
   async function rmImage(path) {
-    if (!/^img\/wall-[\w.-]+$/.test(path || '')) return;
+    if (!/^(?:wall\/|img\/wall-)[\w.-]+$/.test(path || '')) return;
     const c = admin();
     try {
       const g = await gh(c, `${fileApi(c, path)}?ref=${encodeURIComponent(c.branch || 'main')}&t=${Date.now()}`);
@@ -87,15 +88,22 @@
       const d = r.ok ? await r.json() : [];
       remote = Array.isArray(d) ? d.filter(p => p && p.id && p.char) : [];
     } catch { remote = []; }
+    /* то, что гость отправил через воркер и что уже появилось в репозитории, из браузера убираем */
+    const l = local(), ids = new Set(remote.map(p => p.id)), rids = new Set(remote.flatMap(p => (p.replies || []).map(r => r.id)));
+    const np = l.posts.filter(p => !(p.pending && ids.has(p.id))), nr = l.replies.filter(r => !(r.pending && rids.has(r.id)));
+    if (np.length !== l.posts.length || nr.length !== l.replies.length) store.set(LS_LOCAL, { posts: np, replies: nr });
   }
 
   /* записи этого персонажа: из репозитория и из браузера, новые сверху */
   function posts() {
-    const l = local();
-    const rep = id => l.replies.filter(r => r.post === id).map(r => ({ ...r, local: true }));
+    const l = local(), ids = new Set((remote || []).map(p => p.id));
+    const rep = (id, have) => l.replies.filter(r => r.post === id && !have.has(r.id)).map(r => ({ ...r, local: true }));
     return [
-      ...(remote || []).filter(p => p.char === cur).map(p => ({ ...p, replies: [...(Array.isArray(p.replies) ? p.replies : []), ...rep(p.id)] })),
-      ...l.posts.filter(p => p.char === cur).map(p => ({ ...p, local: true, replies: rep(p.id) }))
+      ...(remote || []).filter(p => p.char === cur).map(p => {
+        const mine = Array.isArray(p.replies) ? p.replies : [];
+        return { ...p, replies: [...mine, ...rep(p.id, new Set(mine.map(r => r.id)))] };
+      }),
+      ...l.posts.filter(p => p.char === cur && !ids.has(p.id)).map(p => ({ ...p, local: true, replies: rep(p.id, new Set()) }))
     ].sort((a, b) => String(b.ts).localeCompare(String(a.ts)));
   }
 
@@ -105,7 +113,7 @@
   };
   const hue = s => { let h = 0; for (const ch of String(s)) h = (h * 31 + ch.charCodeAt(0)) % 360; return h; };
   const ava = name => `<span class="w-ava" style="background:hsl(${hue(name)} 32% 52%)">${esc(String(name || '?').charAt(0).toUpperCase())}</span>`;
-  const canDel = p => p.local || !!admin();
+  const canDel = p => (p.local && !p.pending) || !!admin();   // гость удаляет только то, что осталось у него в браузере
 
   function replyHtml(p, r) {
     return `<div class="w-rp">${ava(r.author)}<div class="w-body"><b class="w-au">${esc(r.author)}</b> <span class="w-tx">${esc(r.text)}</span>
@@ -115,7 +123,7 @@
     const img = safeImg(p.img);
     const reps = Array.isArray(p.replies) ? p.replies : [];
     return `<article class="w-post" data-id="${esc(p.id)}">${ava(p.author)}<div class="w-body">
-      <b class="w-au">${esc(p.author)}</b>${p.local ? ' <i class="w-loc" title="Эту запись видно только в этом браузере">видно только тебе</i>' : ''}
+      <b class="w-au">${esc(p.author)}</b>${p.pending ? ' <i class="w-loc" title="Запись отправлена и скоро появится у всех">ожидает публикации</i>' : p.local ? ' <i class="w-loc" title="Эту запись видно только в этом браузере">видно только тебе</i>' : ''}
       ${p.text ? `<div class="w-tx">${esc(p.text)}</div>` : ''}
       ${img ? `<img class="w-img" src="${esc(img)}" alt="Граффити" loading="lazy">` : ''}
       <div class="w-meta"><span>${esc(when(p.ts))}</span><button type="button" class="w-lnk" data-a="reply">Комментировать</button>${canDel(p) ? '<button type="button" class="w-lnk" data-a="del">Удалить</button>' : ''}</div>
@@ -127,7 +135,7 @@
     const list = posts();
     $('.w-count').textContent = list.length ? `${list.length} ${pl(list.length, ['запись', 'записи', 'записей'])}` : '';
     $('.w-list').innerHTML = list.length ? list.map(postHtml).join('') : '<p class="w-empty">На стене пока ничего нет. Напиши первым или нарисуй граффити.</p>';
-    $('.w-where').textContent = admin() ? 'Запись увидят все' : 'Запись останется только в этом браузере';
+    $('.w-where').textContent = admin() ? 'Запись увидят все' : API() ? 'Запись увидят все, примерно через минуту' : 'Запись останется только в этом браузере';
   }
 
   const COLORS = ['#000000', '#8d8d8d', '#ffffff', '#e64646', '#ff9a2e', '#ffd52e', '#3fb04a', '#29b6c6', '#2f6fd6', '#8b4fc8', '#ff6fae', '#8a5a36'];
@@ -222,6 +230,15 @@
   const who = () => { const n = ($('.w-name').value.trim() || 'Гость').slice(0, 30); store.set(LS_NAME, n === 'Гость' ? '' : n); return n; };
   const lock = on => { busy = on; el.querySelectorAll('button').forEach(b => { b.disabled = on; }); };
 
+  /* отправка гостя воркеру, который коммитит запись в репозиторий */
+  async function callApi(body) {
+    let r;
+    try { r = await fetch(API(), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...body, website: '' }) }); }
+    catch { throw new Error('Не получилось связаться со стеной. Проверь интернет.'); }
+    let d = null; try { d = await r.json(); } catch {}
+    if (!r.ok || !d || !d.ok) throw new Error((d && d.error) || `Стена не ответила (${r.status}).`);
+  }
+
   async function send() {
     const text = $('.w-text').value.trim();
     if (!text && !draft.blob) return msg('Напиши что-нибудь или нарисуй граффити.', true);
@@ -232,13 +249,18 @@
         if (draft.blob) post.img = await putImage(draft.blob, post.id);
         const r = await mutate(arr => [post, ...arr], 'Стена: новая запись');
         remote = r.data.filter(p => p && p.id && p.char);
+      } else if (API()) {
+        const body = { type: 'post', id: post.id, char: cur, author: post.author, text };
+        if (draft.blob) { post.img = await dataUrl(draft.blob); body.img = post.img.split(',')[1]; }
+        await callApi(body);
+        const l = local(); l.posts.unshift({ ...post, pending: true }); store.set(LS_LOCAL, l);   // автору видно сразу
       } else {
         if (draft.blob) post.img = await dataUrl(draft.blob);
         const l = local(); l.posts.unshift(post);
         if (!store.set(LS_LOCAL, l)) throw new Error('В браузере не хватило места. Попробуй рисунок попроще.');
       }
       $('.w-text').value = ''; unattach(); cv()._wipe(); gf.undo.length = 0;
-      renderList(); msg(admin() ? 'Опубликовано. Остальные увидят запись примерно через минуту.' : 'Запись добавлена на твою стену.');
+      renderList(); msg(admin() || API() ? 'Запись отправлена. Остальные увидят её примерно через минуту.' : 'Запись добавлена на твою стену.');
     } catch (e) { msg(e.message, true); }
     lock(false);
   }
@@ -252,6 +274,9 @@
       if (admin() && !post.local) {
         const res = await mutate(arr => arr.map(p => p.id === postId ? { ...p, replies: [...(Array.isArray(p.replies) ? p.replies : []), r] } : p), 'Стена: комментарий');
         remote = res.data.filter(p => p && p.id && p.char);
+      } else if (API() && !admin() && (!post.local || post.pending)) {   // «ожидает публикации» значит запись уже в репозитории
+        await callApi({ type: 'reply', id: r.id, post: postId, author: r.author, text: r.text });
+        const l = local(); l.replies.push({ ...r, post: postId, pending: true }); store.set(LS_LOCAL, l);
       } else {
         const l = local(); l.replies.push({ ...r, post: postId });
         if (!store.set(LS_LOCAL, l)) throw new Error('В браузере не хватило места.');
