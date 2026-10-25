@@ -314,6 +314,197 @@ details a{color:var(--red)}
 .list .del:hover{background:var(--red);color:var(--on-red)}
 .list .none{display:block;color:var(--mute);border:0}
 
+/* ============================================================
+   ПЕРЕКЛЮЧАТЕЛЬ СТИЛЯ (Pinterest / YouTube)
+   <html data-style="pinterest|youtube">, выбор хранится в localStorage
+   ============================================================ */
+.stylewrap{position:relative;display:flex}
+.menu{position:absolute;z-index:50;right:0;top:calc(100% + 10px);width:max-content;min-width:220px;padding:8px;border:1px solid var(--line);border-radius:16px;background:var(--elev);box-shadow:0 8px 32px rgba(0,0,0,.22)}
+.menu-h{padding:8px 12px 6px;color:var(--mute);font-size:.78rem;font-weight:600}
+.menu button{display:flex;align-items:center;gap:12px;width:100%;height:44px;padding:0 12px;border:0;border-radius:10px;background:none;color:var(--ink);font-size:.95rem;font-weight:600;text-align:left}
+.menu button:hover{background:var(--chip)}
+.menu button[aria-checked="true"]::after{content:"✓";margin-left:auto;padding-left:16px}
+.ico{display:grid;place-items:center;flex:none;width:28px;height:28px;font-style:normal}
+.ico-pin{border-radius:50%;background:#e60023;color:#fff;font:700 .95rem/1 var(--ui)}
+.ico-yt{height:20px;margin:4px 0;border-radius:6px;background:#f00}
+.ico-yt::before{content:"";margin-left:2px;border-style:solid;border-width:5px 0 5px 8px;border-color:transparent transparent transparent #fff}
+
+/* поля карточки, которые видны только в стиле YouTube */
+.av,.cl{display:none}
+.sub .dots{order:-1}
+@media (max-width:600px){.side{gap:8px}}
+
+/* ============================================================
+   СТИЛЬ «YOUTUBE»
+   белый или почти чёрный фон, превью 16:9, аватарка и две строки под ним
+   ============================================================ */
+:root[data-style="youtube"]{
+  --paper:#fff;
+  --elev:#fff;
+  --surface:#f2f2f2;
+  --chip:#f2f2f2;
+  --chip-h:#e5e5e5;
+  --ink:#0f0f0f;
+  --on-ink:#fff;
+  --mute:#606060;
+  --line:#e5e5e5;
+  --edge:#ccc;
+  --focus:#065fd4;
+  --top-bg:#fff;
+  --note:#0f0f0f;
+  --red:#065fd4;          /* акцент: синий YouTube; красным остаётся только логотип */
+  --red-d:#0b4ea2;
+  --glow:rgba(6,95,212,.28);
+  --on-red:#fff;
+  --r:12px;
+  --ui:Roboto,'Segoe UI',Arial,'Helvetica Neue',sans-serif;
+}
+:root[data-style="youtube"][data-theme="dark"]{
+  --paper:#0f0f0f;
+  --elev:#212121;
+  --surface:#272727;
+  --chip:#272727;
+  --chip-h:#3f3f3f;
+  --ink:#f1f1f1;
+  --on-ink:#0f0f0f;
+  --mute:#aaa;
+  --line:#303030;
+  --edge:#303030;
+  --focus:#3ea6ff;
+  --top-bg:#0f0f0f;
+  --note:#f1f1f1;
+  --red:#3ea6ff;
+  --red-d:#65b8ff;
+  --glow:rgba(62,166,255,.28);
+  --on-red:#0f0f0f;
+}
+
+/* шапка */
+:root[data-style="youtube"] .top{backdrop-filter:none}
+:root[data-style="youtube"] .top-in{height:56px;gap:16px}
+:root[data-style="youtube"] .logo{flex:1 1 0}
+:root[data-style="youtube"] .logo a{gap:4px;padding:0 8px 0 4px;border-radius:8px;color:var(--ink);font-size:1.15rem;letter-spacing:-.04em}
+:root[data-style="youtube"] .logo a:hover{background:none}
+:root[data-style="youtube"] .logo i{width:30px;height:21px;border-radius:6px;background:#f00;font-size:0}
+:root[data-style="youtube"] .logo i::before{content:"";margin-left:2px;border-style:solid;border-width:5px 0 5px 8px;border-color:transparent transparent transparent #fff}
+:root[data-style="youtube"] .search{flex:0 1 640px}
+:root[data-style="youtube"] .find{height:40px;padding:0 76px 0 20px;border:1px solid var(--edge);background:var(--paper)}
+:root[data-style="youtube"] .find:hover{background:var(--paper)}
+:root[data-style="youtube"] .find:focus{background:var(--paper);border-color:var(--focus)}
+:root[data-style="youtube"] .search svg{left:auto;right:0;top:0;translate:none;width:64px;height:40px;padding:10px 21px;border:1px solid var(--edge);border-radius:0 40px 40px 0;background:var(--chip);color:var(--ink)}
+:root[data-style="youtube"] .side{flex:1 1 0;justify-content:flex-end;margin-left:0;gap:8px}
+:root[data-style="youtube"] .theme{background:none}
+:root[data-style="youtube"] .theme:hover{background:var(--chip)}
+:root[data-style="youtube"] .top nav a{height:36px;padding:0 14px;border:1px solid var(--edge);border-radius:18px;background:none;color:var(--red);font-size:.875rem;font-weight:500}
+:root[data-style="youtube"] .top nav a:hover{background:var(--chip)}
+
+/* страница персонажа, ленты цветов и фильтры */
+:root[data-style="youtube"] .crumb{align-items:flex-start;padding:16px 0 0;text-align:left}
+:root[data-style="youtube"] .crumb h2{font-size:clamp(1.5rem,4vw,2rem);letter-spacing:-.01em}
+:root[data-style="youtube"] .cnote{max-width:46em}
+:root[data-style="youtube"] .back{height:32px;padding:0 14px 0 10px;border-radius:8px;font-size:.875rem;font-weight:500}
+:root[data-style="youtube"] .bar{height:40px;gap:2px}
+:root[data-style="youtube"] .seg{border-radius:8px}
+:root[data-style="youtube"] .spectrum-note{text-align:left}
+:root[data-style="youtube"] .controls{gap:10px;padding:12px 0 0}
+:root[data-style="youtube"] .tab,
+:root[data-style="youtube"] .pill,
+:root[data-style="youtube"] .sort,
+:root[data-style="youtube"] .rnd,
+:root[data-style="youtube"] .reset{height:32px;padding:0 12px;border-radius:8px;font-size:.875rem;font-weight:500}
+:root[data-style="youtube"] .pill{border:0;background:var(--chip)}
+:root[data-style="youtube"] .pill:hover{background:var(--chip-h)}
+:root[data-style="youtube"] .pill.on{background:var(--ink);color:var(--on-ink)}
+:root[data-style="youtube"] .empty a,
+:root[data-style="youtube"] .empty button{height:40px;padding:0 20px;border-radius:18px;font-weight:500}
+
+@media (max-width:600px){
+  :root[data-style="youtube"] .top-in{gap:8px}
+  :root[data-style="youtube"] .logo,
+  :root[data-style="youtube"] .side{flex:none}
+  :root[data-style="youtube"] .search{flex:1 1 0}
+  :root[data-style="youtube"] .search svg{width:52px;padding:10px 16px}
+  :root[data-style="youtube"] .find{padding-right:60px}
+  :root[data-style="youtube"] .side{gap:2px;margin-left:auto}
+  :root[data-style="youtube"] .top nav a{padding:0 10px}
+}
+
+/* лента: ровная сетка, как на главной YouTube */
+:root[data-style="youtube"] .grid{
+  display:grid;columns:auto;
+  grid-template-columns:repeat(auto-fill,minmax(min(100%,290px),1fr));
+  gap:36px 16px;padding:20px 0 80px;
+}
+:root[data-style="youtube"] .item{margin:0;break-inside:auto}
+
+/* превью 16:9: фото целиком по центру на размытой копии самого себя */
+:root[data-style="youtube"] .ph{
+  aspect-ratio:16/9!important;isolation:isolate;
+  border-radius:var(--r);background:var(--chip);cursor:pointer;
+  transition:border-radius .2s;
+}
+:root[data-style="youtube"] .item:hover .ph,
+:root[data-style="youtube"] .item:focus-visible .ph{border-radius:0}
+:root[data-style="youtube"] .item.char .ph{border-radius:var(--r)}
+:root[data-style="youtube"] .item.char:hover .ph{border-radius:0}
+:root[data-style="youtube"] .ph::before{
+  content:"";position:absolute;inset:-24px;z-index:-1;
+  background:var(--bg,none) center/cover no-repeat;
+  filter:blur(20px) saturate(1.15) brightness(.85);
+}
+:root[data-style="youtube"] .ph.noimg::before{display:none}
+:root[data-style="youtube"] .ph::after{display:none}
+:root[data-style="youtube"] .ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+:root[data-style="youtube"] .ph.noimg{font-size:2.2rem}
+:root[data-style="youtube"] .ph .pin{display:none}
+:root[data-style="youtube"] .ph .cnt{left:auto;right:8px;bottom:8px;padding:1px 5px;border-radius:4px;background:rgba(0,0,0,.8);color:#fff;font-size:.75rem;font-weight:500}
+:root[data-style="youtube"] .ph .cnt::after{content:" фото"}
+:root[data-style="youtube"] .new{top:8px;left:8px;height:20px;padding:0 6px;border-radius:4px;background:#cc0000;color:#fff;font-size:.68rem;text-transform:uppercase}
+
+/* подпись: аватарка слева, название и «категория • сезон» справа */
+:root[data-style="youtube"] button.item{
+  display:grid;align-content:start;column-gap:12px;
+  grid-template-columns:36px minmax(0,1fr);
+  grid-template-areas:"ph ph" "av nm" "av sub";
+}
+:root[data-style="youtube"] button.item>.ph{grid-area:ph}
+:root[data-style="youtube"] .av{
+  grid-area:av;display:grid;place-items:center;width:36px;height:36px;margin-top:12px;
+  border-radius:50%;color:#fff;font:500 1rem/1 var(--ui);box-shadow:inset 0 0 0 1px rgba(0,0,0,.12);
+}
+:root[data-style="youtube"] .av.lt{color:#111}
+:root[data-style="youtube"] .nm{
+  grid-area:nm;margin:12px 0 0;font-size:1rem;font-weight:500;line-height:1.35;text-wrap:wrap;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+}
+:root[data-style="youtube"] .item.char .nm{font-weight:600}
+:root[data-style="youtube"] .sub{grid-area:sub;justify-content:flex-start;flex-wrap:wrap;gap:0;margin:2px 0 0;color:var(--mute);font-size:.875rem}
+:root[data-style="youtube"] .cl{display:inline;color:var(--mute);font-size:.875rem}
+:root[data-style="youtube"] .ssn{color:var(--mute);font-size:.875rem}
+:root[data-style="youtube"] .cl+.ssn::before{content:"•";margin:0 4px}
+:root[data-style="youtube"] .sub .dots{order:0;margin-left:8px}
+:root[data-style="youtube"] .item.char .kicker,
+:root[data-style="youtube"] .item.char .cnote{margin:4px 0 0;font-size:.875rem}
+
+/* карточка вещи — как страница с плеером */
+:root[data-style="youtube"] dialog{border-radius:16px}
+:root[data-style="youtube"] .gal{background:#000}
+:root[data-style="youtube"] .gm img{border-radius:0}
+:root[data-style="youtube"] .th{border-radius:8px;background:#222}
+:root[data-style="youtube"] .th.on{border-color:#fff}
+:root[data-style="youtube"] .info h2{font-size:clamp(1.3rem,2.4vw,1.6rem);font-weight:600;letter-spacing:0}
+:root[data-style="youtube"] .info .cat{border-radius:8px;font-weight:500}
+:root[data-style="youtube"] .note{border-radius:12px}
+:root[data-style="youtube"] .mnav button{height:40px;border-radius:18px;font-size:.875rem;font-weight:500}
+
+/* админка в том же стиле */
+:root[data-style="youtube"] .panel{border-radius:12px;box-shadow:none}
+:root[data-style="youtube"] .btn{height:40px;padding:0 20px;border-radius:18px;font-size:.875rem;font-weight:500}
+:root[data-style="youtube"] .field input,
+:root[data-style="youtube"] .field textarea,
+:root[data-style="youtube"] .field select,
+:root[data-style="youtube"] .inline input{border-radius:8px}
+
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation:none!important;transition:none!important}
 }

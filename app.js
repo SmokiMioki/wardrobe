@@ -24,6 +24,12 @@
     const [r, g, b] = [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
     return r * .299 + g * .587 + b * .114 > 150;
   };
+  /* фон-размытие для превью 16:9 (используется только в стиле YouTube) */
+  const bgVar = src => `--bg:url("${String(src).replace(/["\\()\s]/g, ch => '%' + ch.charCodeAt(0).toString(16).toUpperCase().padStart(2, '0'))}")`;
+  const phStyle = (ar, src) => {
+    const s = [ar ? `aspect-ratio:${ar}` : '', src ? bgVar(src) : ''].filter(Boolean).join(';');
+    return s ? ` style="${esc(s)}"` : '';
+  };
   const dots = list => (list || []).map(n => `<i class="dot" style="background:${paint(n)}" title="${esc(n)}"></i>`).join('');
 
   /* ---------- мелочи ---------- */
@@ -72,7 +78,7 @@
     grid.innerHTML = list.map((c, i) => {
       const n = data.filter(e => e.char === c.id).length;
       const ph = c.cover
-        ? `<span class="ph"${c.ar ? ` style="aspect-ratio:${c.ar}"` : ''}><img src="${esc(c.cover)}" alt="${esc(c.name)}" loading="lazy" decoding="async"></span>`
+        ? `<span class="ph"${phStyle(c.ar, c.cover)}><img src="${esc(c.cover)}" alt="${esc(c.name)}" loading="lazy" decoding="async"></span>`
         : `<span class="ph noimg" style="background:linear-gradient(160deg,#ffd9de,#f3a6b0)">${esc((c.name || '?').charAt(0).toUpperCase())}</span>`;
       return `<a class="item char" href="${hashOf(c.id) || '#'}" style="--i:${Math.min(i, 14)}">${ph}<span class="kicker">${n} ${pl(n, THINGS)}</span><span class="nm">${esc(c.name)}</span>${c.note ? `<span class="cnote">${esc(c.note)}</span>` : ''}</a>`;
     }).join('');
@@ -119,10 +125,12 @@
     grid.innerHTML = view.map((e, i) => {
       const cover = e.images[0];
       const ph = cover
-        ? `<span class="ph"${e.ar ? ` style="aspect-ratio:${e.ar}"` : ''}><img src="${esc(cover)}" alt="${esc(e.name)}" loading="lazy" decoding="async"><span class="pin">Открыть</span>${e.images.length > 1 ? `<span class="cnt">${e.images.length}</span>` : ''}</span>`
+        ? `<span class="ph"${phStyle(e.ar, cover)}><img src="${esc(cover)}" alt="${esc(e.name)}" loading="lazy" decoding="async"><span class="pin">Открыть</span>${e.images.length > 1 ? `<span class="cnt">${e.images.length}</span>` : ''}</span>`
         : `<span class="ph noimg" style="background:${paint(e.colors[0])}">${esc((e.name || '?').charAt(0).toUpperCase())}</span>`;
       const fresh = e.added && Date.now() - Date.parse(e.added) < NEW_MS;
-      return `<button class="item" type="button" data-id="${esc(e.id)}" style="--i:${Math.min(i, 14)}">${fresh ? '<span class="new">new</span>' : ''}${ph}<span class="nm">${esc(e.name)}</span><span class="sub"><span class="dots">${dots(e.colors)}</span>${seasonMarks(e.seasons)}</span></button>`;
+      const av = `<span class="av${isLight(e.colors[0]) ? ' lt' : ''}" style="background:${paint(e.colors[0])}" aria-hidden="true">${esc((e.name || '?').charAt(0).toUpperCase())}</span>`;
+      const cl = e.cat ? `<span class="cl">${esc(e.cat)}</span>` : '';
+      return `<button class="item" type="button" data-id="${esc(e.id)}" style="--i:${Math.min(i, 14)}">${fresh ? '<span class="new">new</span>' : ''}${ph}${av}<span class="nm">${esc(e.name)}</span><span class="sub">${cl}${seasonMarks(e.seasons)}<span class="dots">${dots(e.colors)}</span></span></button>`;
     }).join('');
 
     const filtered = state.cat || state.color || state.season || state.q.trim();
