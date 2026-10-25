@@ -1,7 +1,11 @@
 (() => {
   const root = document.documentElement;
   const meta = document.querySelector('meta[name="theme-color"]');
-  const BAR = { pinterest: { light: '#ffffff', dark: '#111111' }, youtube: { light: '#ffffff', dark: '#0f0f0f' } };
+  const BAR = {
+    pinterest: { light: '#ffffff', dark: '#111111' },
+    youtube: { light: '#ffffff', dark: '#0f0f0f' },
+    vk: { light: '#45688e', dark: '#2d4157' }
+  };
   const sync = () => {
     if (meta) meta.content = (BAR[root.dataset.style] || BAR.pinterest)[root.dataset.theme === 'dark' ? 'dark' : 'light'];
   };
@@ -19,7 +23,7 @@
   const btn = document.getElementById('style');
   const menu = document.getElementById('style-menu');
   const applyStyle = s => {
-    root.dataset.style = s === 'youtube' ? 'youtube' : 'pinterest';
+    root.dataset.style = s === 'youtube' || s === 'vk' ? s : 'pinterest';
     sync();
     if (menu) menu.querySelectorAll('[data-pick]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.pick === root.dataset.style)));
   };

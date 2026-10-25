@@ -89,6 +89,7 @@
     empty.innerHTML = '<h2>Здесь пока нет персонажей</h2><p>Первого персонажа можно создать в админке. Потом в ней же появятся категории и вещи.</p><a href="admin.html">Открыть админку</a>';
     empty.hidden = list.length > 0;
     $('#count').textContent = list.length ? `${list.length} ${pl(list.length, PEOPLE)}` : '';
+    $('main').dataset.n = list.length;
   }
 
   /* ---------- цветовая лента ---------- */
@@ -144,6 +145,7 @@
       empty.innerHTML = '<h2>Тут ничего нет</h2><p>Под такие фильтры вещей не нашлось. Может, она в стирке?</p><button type="button" id="empty-reset" class="reset">Сбросить фильтры</button>';
     }
     empty.hidden = view.length > 0;
+    $('main').dataset.n = view.length;
     $('#count').textContent = base.length ? (filtered ? `${view.length} из ${base.length}` : `${base.length} ${pl(base.length, THINGS)}`) : '';
     $('#controls').hidden = !base.length;
     $('#rnd').hidden = !view.length;
@@ -153,8 +155,9 @@
   const initial = n => esc((n || '?').charAt(0).toUpperCase());
   function renderGuide() {
     const home = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M4 10.5L12 4l8 6.5V20h-5v-6H9v6H4z"/></svg>';
-    guideEl.innerHTML = `<a class="g-i${state.char === null ? ' on' : ''}" href="#">${home}<span class="g-n">Главная</span></a>`
-      + (allChars().length ? '<p class="g-h">Плейлисты</p>' : '')
+    const vk = document.documentElement.dataset.style === 'vk';
+    guideEl.innerHTML = `<a class="g-i${state.char === null ? ' on' : ''}" href="#">${home}<span class="g-n">${vk ? 'Мои Друзья' : 'Главная'}</span></a>`
+      + (allChars().length ? `<p class="g-h">${vk ? 'Друзья онлайн' : 'Плейлисты'}</p>` : '')
       + allChars().map(c => `<a class="g-i${state.char === c.id ? ' on' : ''}" href="${hashOf(c.id)}"><span class="g-a"${c.cover ? ` style="${esc(bgVar(c.cover))}"` : ''}>${c.cover ? '' : initial(c.name)}</span><span class="g-n">${esc(c.name)}</span></a>`).join('');
   }
 
@@ -175,7 +178,7 @@
     $('#cnote').hidden = !c.note;
     /* шапка плейлиста (видна только в стиле YouTube) */
     const total = data.filter(e => e.char === state.char).length;
-    $('#pl-meta').textContent = `Плейлист • ${total} ${pl(total, THINGS)}`;
+    $('#pl-meta').innerHTML = `<span class="m-pl">Плейлист • ${total} ${pl(total, THINGS)}</span><span class="m-vk">Фотографий: ${total}</span>`;
     $('#pl-cover').hidden = !c.cover;
     if (c.cover) { $('#pl-img').src = c.cover; crumbEl.style.setProperty('--bg', bgUrl(c.cover)); }
     else crumbEl.style.removeProperty('--bg');
@@ -313,6 +316,7 @@
   });
   /* смена стиля при открытой вещи: показать её в новом виде */
   addEventListener('wardrobe-style', () => {
+    renderGuide();
     const e = (modal.open || !watchEl.hidden) ? list[at] : null;
     if (modal.open) modal.close();
     closeWatch();
