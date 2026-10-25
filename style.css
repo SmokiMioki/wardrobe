@@ -916,6 +916,182 @@ details a{color:var(--red)}
   .w-ava{width:40px;height:40px}
 }
 
+/* ============================================================
+   ICQ 2009: зелёная глянцевая шапка окон, цветок, скруглённые углы.
+   Слева контакт-лист, справа окно сообщений (чат собирает icq.js из стены).
+   ============================================================ */
+:root{--flower:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cg fill='%2352b83a' stroke='%23000' stroke-opacity='.3' stroke-width='.6'%3E%3Cellipse cx='8' cy='4.3' rx='2.5' ry='3.3'/%3E%3Cellipse cx='8' cy='4.3' rx='2.5' ry='3.3' transform='rotate%2872 8 8%29'/%3E%3Cellipse cx='8' cy='4.3' rx='2.5' ry='3.3' transform='rotate%28144 8 8%29'/%3E%3Cellipse cx='8' cy='4.3' rx='2.5' ry='3.3' transform='rotate%28216 8 8%29'/%3E%3Cellipse cx='8' cy='4.3' rx='2.5' ry='3.3' transform='rotate%28288 8 8%29'/%3E%3C/g%3E%3Ccircle cx='8' cy='8' r='1.9' fill='%23ffe34a' stroke='%23000' stroke-opacity='.25' stroke-width='.5'/%3E%3C/svg%3E")}
+.ico-icq{background:var(--flower) center/22px 22px no-repeat}
+.icq{display:none}
+
+:root[data-style="icq"]{
+  --paper:#fff;
+  --elev:#fff;
+  --surface:#f4f7f2;
+  --chip:#e8efe3;
+  --chip-h:#d9e5d0;
+  --ink:#1e2a17;
+  --on-ink:#fff;
+  --mute:#6b7765;
+  --line:#c9d6bf;
+  --edge:#aebfa3;
+  --focus:#2f8a14;
+  --top-bg:#dbe7f3;
+  --note:#1e2a17;
+  --lnk:#1b5fb0;
+  --red:#4aa322;
+  --red-d:#3c8f1b;
+  --glow:rgba(74,163,34,.3);
+  --on-red:#fff;
+  --r:6px;
+  --gap:10px;
+  --ui:Tahoma,Verdana,'Segoe UI',Arial,sans-serif;
+  --iq-win:#f4f7f2; --iq-log:#fff; --iq-line:#b8c9ac; --iq-gh:#eef3ea; --iq-gh-fg:#4d7a37;
+  --iq-hover:#f1f8ea; --iq-sel1:#e3f4d6; --iq-sel2:#c9e9b2; --iq-sel-edge:#9fd07f;
+  --iq-other:#1b5fb0; --iq-me:#2f8a14; --iq-time:#8a9484; --iq-foot:#f3f7ef; --iq-field:#fff;
+}
+:root[data-style="icq"][data-theme="dark"]{
+  --paper:#1b1f1c;
+  --elev:#1b1f1c;
+  --surface:#262b27;
+  --chip:#323a33;
+  --chip-h:#3d473e;
+  --ink:#e6eee1;
+  --on-ink:#1b1f1c;
+  --mute:#9aa595;
+  --line:#3c463d;
+  --edge:#566257;
+  --focus:#8fdc6a;
+  --top-bg:#222a33;
+  --note:#e6eee1;
+  --lnk:#7fb4ff;
+  --red:#4aa322;
+  --red-d:#5cb92e;
+  --iq-win:#262b27; --iq-log:#1b1f1c; --iq-line:#47524a; --iq-gh:#2f3a30; --iq-gh-fg:#9fd07f;
+  --iq-hover:#2d352e; --iq-sel1:#3b5a2b; --iq-sel2:#2f4a22; --iq-sel-edge:#5c8e41;
+  --iq-other:#7fb4ff; --iq-me:#8fdc6a; --iq-time:#8d978a; --iq-foot:#232823; --iq-field:#1b1f1c;
+}
+:root[data-style="icq"] body{
+  font-size:13px;line-height:1.4;
+  background:radial-gradient(ellipse at 25% 15%,#6db3ee 0,#2f6fb8 55%,#143f7c 100%) fixed;
+}
+:root[data-style="icq"][data-theme="dark"] body{background:radial-gradient(ellipse at 25% 15%,#26415f 0,#142235 60%,#0b121c 100%) fixed}
+
+/* шапка сайта: тонкая «панель», в ней цветок и ICQ */
+:root[data-style="icq"] .top{background:linear-gradient(#eef4fa,var(--top-bg));border-bottom:1px solid rgba(0,0,0,.25);backdrop-filter:none;color:var(--ink)}
+:root[data-style="icq"][data-theme="dark"] .top{background:linear-gradient(#2c3541,var(--top-bg))}
+:root[data-style="icq"] .top-in{height:40px;max-width:none;gap:10px;padding:0 10px}
+:root[data-style="icq"] .logo a{gap:6px;padding:0;border-radius:0;color:#3c8f1b;font-size:0;letter-spacing:0}
+:root[data-style="icq"] .logo a:hover{background:none}
+:root[data-style="icq"] .logo i,:root[data-style="icq"] .logo b{display:none}
+:root[data-style="icq"] .logo a::before{content:"";width:24px;height:24px;background:var(--flower) center/contain no-repeat}
+:root[data-style="icq"] .logo a::after{content:"ICQ";font:italic 800 1.2rem/1 var(--ui);letter-spacing:.02em}
+:root[data-style="icq"][data-theme="dark"] .logo a{color:#8fdc6a}
+:root[data-style="icq"] .search,:root[data-style="icq"] .count{display:none}
+:root[data-style="icq"] .side{gap:6px}
+:root[data-style="icq"] .theme{width:30px;height:28px;border:1px solid var(--edge);border-radius:5px;background:linear-gradient(#fff,var(--chip));color:var(--ink)}
+:root[data-style="icq"] .theme:hover{background:linear-gradient(#fff,var(--chip-h))}
+:root[data-style="icq"] .theme svg{width:17px;height:17px}
+:root[data-style="icq"] .top nav a{height:28px;padding:0 12px;border:1px solid var(--edge);border-radius:5px;background:linear-gradient(#fff,var(--chip));color:var(--ink);font-size:.8rem;font-weight:700}
+:root[data-style="icq"] .top nav a:hover{background:linear-gradient(#fff,var(--chip-h))}
+:root[data-style="icq"] .menu{border-radius:8px}
+:root[data-style="icq"] .menu button{height:38px;border-radius:5px;font-size:.85rem}
+
+/* сам гардероб в этом стиле не показываем */
+:root[data-style="icq"] .wrap,:root[data-style="icq"] .guide{display:none}
+
+/* окна */
+:root[data-style="icq"] .icq:not([hidden]){display:flex;gap:12px;align-items:flex-start;justify-content:center;min-height:calc(100dvh - 40px);padding:16px 12px}
+.icq-win{display:flex;flex-direction:column;height:min(640px,calc(100dvh - 72px));overflow:hidden;border:1px solid #4d6f8c;border-radius:8px 8px 4px 4px;background:var(--iq-win);color:var(--ink);font:13px/1.4 var(--ui);box-shadow:0 8px 28px rgba(0,0,0,.45),inset 0 0 0 1px rgba(255,255,255,.35)}
+:root[data-theme="dark"] .icq-win{border-color:#0c1118;box-shadow:0 8px 28px rgba(0,0,0,.65),inset 0 0 0 1px rgba(255,255,255,.06)}
+.icq-cl{flex:none;width:262px}
+.icq-ch{flex:1;min-width:0;max-width:780px}
+.icq-tb{display:flex;align-items:center;gap:8px;flex:none;height:30px;padding:0 6px 0 10px;background:linear-gradient(#a7e57b 0,#6cc43d 48%,#4da326 52%,#5ab72f 100%);border-bottom:1px solid #3c8f1b;color:#fff;text-shadow:0 1px 1px rgba(0,0,0,.4)}
+.icq-tt{display:flex;align-items:center;gap:6px;flex:1;min-width:0;font-size:13px}
+.icq-tt b{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.icq-tt .icq-fl{width:18px;height:18px}
+.icq-wb{display:flex;gap:3px;margin-left:auto}
+.icq-wb i{display:grid;place-items:center;width:20px;height:17px;border:1px solid rgba(0,0,0,.35);border-radius:4px;background:linear-gradient(rgba(255,255,255,.55),rgba(255,255,255,.12));color:#fff;font:700 11px/1 var(--ui);font-style:normal;text-shadow:none}
+.icq-wb i:last-child{background:linear-gradient(#f59a86,#d9482b);}
+.icq-back{display:none;height:20px;padding:0 8px;border:1px solid rgba(0,0,0,.35);border-radius:4px;background:linear-gradient(rgba(255,255,255,.55),rgba(255,255,255,.12));color:#fff;font:700 12px var(--ui);text-shadow:0 1px 1px rgba(0,0,0,.4)}
+.icq-fl,.icq-env{width:16px;height:16px;flex:none}
+
+.icq-me{display:flex;align-items:center;gap:8px;flex:none;padding:9px 10px;background:linear-gradient(#f9fcf6,#e1edd8);border-bottom:1px solid var(--iq-line)}
+:root[data-theme="dark"] .icq-me{background:linear-gradient(#323a33,#2a312b)}
+.icq-me .icq-fl{width:26px;height:26px}
+.icq-mi{display:flex;flex-direction:column;flex:1;min-width:0}
+.icq-nick{overflow:hidden;font-size:14px;text-overflow:ellipsis;white-space:nowrap}
+.icq-mi small{color:var(--iq-me);font-size:11px}
+.icq-snd{padding:0;border:0;background:none;color:var(--lnk);font:11px var(--ui)}
+.icq-snd:hover{text-decoration:underline}
+
+.icq-cts{flex:1;min-height:0;overflow-y:auto;background:var(--iq-log)}
+.icq-gh{padding:3px 10px;border-block:1px solid var(--iq-line);background:var(--iq-gh);color:var(--iq-gh-fg);font-size:11px;font-weight:700}
+.icq-gh:first-child{border-top:0}
+.icq-none{padding:10px;color:var(--mute);font-size:12px}
+.icq-ct{display:flex;align-items:center;gap:8px;width:100%;padding:6px 10px;border:0;border-bottom:1px solid transparent;background:none;color:var(--ink);font:13px var(--ui);text-align:left;cursor:pointer}
+.icq-ct:hover{background:var(--iq-hover)}
+.icq-ct.on{background:linear-gradient(var(--iq-sel1),var(--iq-sel2));border-bottom-color:var(--iq-sel-edge)}
+.icq-cn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.icq-ct.new .icq-cn{font-weight:700}
+.icq-ct.new .icq-env{animation:icq-blink 1s steps(1) infinite}
+.icq-un{min-width:18px;padding:0 5px;border-radius:9px;background:#e8512b;color:#fff;font-size:10px;font-weight:700;line-height:16px;text-align:center}
+@keyframes icq-blink{50%{opacity:.2}}
+.icq-foot{display:flex;align-items:center;gap:6px;flex:none;padding:5px 10px;border-top:1px solid var(--iq-line);background:var(--iq-foot);color:var(--mute)}
+.icq-foot small{font-size:10px}
+
+/* чат: стена из wall.js в виде окна сообщений */
+.icq-chat{display:flex;flex-direction:column;flex:1;min-height:0;padding:8px;background:var(--iq-win)}
+:root[data-style="icq"] .wall{display:flex;flex-direction:column;flex:1;min-height:0;gap:8px;margin:0;border:0;background:none}
+:root[data-style="icq"] .wall[hidden]{display:none}
+:root[data-style="icq"] .w-h{display:none}
+:root[data-style="icq"] .w-list{order:1;flex:1;min-height:0;display:flex;flex-direction:column-reverse;overflow-y:auto;padding:8px 10px;border:1px solid var(--iq-line);border-radius:4px;background:var(--iq-log)}
+:root[data-style="icq"] .w-list>:first-child{margin-bottom:auto}
+:root[data-style="icq"] .w-empty{padding:10px 0;color:var(--mute);text-align:left}
+:root[data-style="icq"] .w-post{display:block;padding:4px 0;border:0}
+:root[data-style="icq"] .w-ava{display:none}
+:root[data-style="icq"] .w-body{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 6px}
+:root[data-style="icq"] .w-au{order:1;color:var(--iq-other);font-size:13px;font-weight:700}
+:root[data-style="icq"] .mine>.w-body>.w-au{color:var(--iq-me)}
+:root[data-style="icq"] .w-loc{order:2;margin:0;font-size:11px}
+:root[data-style="icq"] .w-meta{order:2;gap:0 8px;margin:0;color:var(--iq-time);font-size:11px}
+:root[data-style="icq"] .w-meta>span::before{content:"("}
+:root[data-style="icq"] .w-meta>span::after{content:")"}
+:root[data-style="icq"] .w-meta .w-lnk{opacity:0;font-size:11px}
+:root[data-style="icq"] .w-post:hover>.w-body>.w-meta .w-lnk,:root[data-style="icq"] .w-rp:hover>.w-body>.w-meta .w-lnk,:root[data-style="icq"] .w-meta .w-lnk:focus-visible{opacity:1}
+@media (hover:none){:root[data-style="icq"] .w-meta .w-lnk{opacity:.7}}
+:root[data-style="icq"] .w-tx{order:3;flex:0 0 100%;margin:1px 0 0;font-size:13px}
+:root[data-style="icq"] .w-body::after{content:"";order:3;flex:0 0 100%;height:0}
+:root[data-style="icq"] .w-img{order:4;max-width:min(100%,380px);margin-top:4px;border-radius:3px}
+:root[data-style="icq"] .w-reps{order:5;flex:0 0 100%;margin:3px 0 0 4px;padding:0 0 0 10px;border-left:2px solid var(--iq-line);background:none}
+:root[data-style="icq"] .w-rp{display:block;padding:2px 0}
+:root[data-style="icq"] .w-rf{order:6;flex:0 0 100%}
+
+:root[data-style="icq"] .w-form{order:2;display:flex;flex-direction:column;gap:6px;padding:0;border:0}
+:root[data-style="icq"] .w-name,:root[data-style="icq"] .w-text,:root[data-style="icq"] .w-rf input{border:1px solid var(--iq-line);border-radius:4px;background:var(--iq-field);color:var(--ink);font:13px var(--ui)}
+:root[data-style="icq"] .w-name{order:0;width:200px;height:26px;margin:0;padding:0 8px}
+:root[data-style="icq"] .w-text{order:1;min-height:58px;max-height:120px;padding:6px 8px;resize:none}
+:root[data-style="icq"] .w-name:focus,:root[data-style="icq"] .w-text:focus,:root[data-style="icq"] .w-rf input:focus{border-color:#4aa322;box-shadow:0 0 0 2px rgba(74,163,34,.25)}
+:root[data-style="icq"] .w-att{order:2;margin:0}
+:root[data-style="icq"] .gf{order:3;margin:0;max-height:46dvh;overflow:auto;border-radius:4px;border-color:var(--iq-line);background:var(--iq-win)}
+:root[data-style="icq"] .w-bar{order:4;margin:0;gap:6px 14px}
+:root[data-style="icq"] .w-msg{order:5;margin:0;border-radius:4px}
+:root[data-style="icq"] .w-btn{height:26px;padding:0 18px;border:1px solid #3c8f1b;border-radius:4px;background:linear-gradient(#8ddc57,#4aa322);color:#fff;font:700 12px var(--ui);text-shadow:0 1px 1px rgba(0,0,0,.35)}
+:root[data-style="icq"] .w-btn:hover{background:linear-gradient(#9ae667,#55b32b)}
+:root[data-style="icq"] .w-btn:active{background:linear-gradient(#4aa322,#6bc03a)}
+:root[data-style="icq"] .w-lnk{font-size:12px}
+:root[data-style="icq"] .w-where{font-size:11px}
+:root[data-style="icq"] .gf-grp button{border-radius:3px}
+
+@media (max-width:720px){
+  :root[data-style="icq"] .icq:not([hidden]){gap:0;padding:0}
+  .icq-win{width:100%;max-width:none;height:calc(100dvh - 40px);border-width:0;border-radius:0;box-shadow:none}
+  .icq-cl,.icq-ch{flex:1 1 100%;width:100%}
+  .icq[data-pane="list"] .icq-ch,.icq[data-pane="chat"] .icq-cl{display:none}
+  .icq-back{display:inline-block}
+  :root[data-style="icq"] .w-name{width:100%}
+}
+
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation:none!important;transition:none!important}
 }

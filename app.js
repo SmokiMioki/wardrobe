@@ -15,6 +15,7 @@
   const grid = $('#grid'), empty = $('#empty'), modal = $('#modal'), body = $('#modal-body');
   const bar = $('#bar'), tabs = $('#tabs'), seasonsEl = $('#seasons'), resetBtn = $('#reset'), sortSel = $('#sort');
   const wrapEl = $('#wrap'), watchEl = $('#watch'), guideEl = $('#guide'), crumbEl = $('#crumb');
+  const icqOn = () => document.documentElement.dataset.style === 'icq';   // в стиле ICQ стеной управляет icq.js
   const yt = () => document.documentElement.dataset.style === 'youtube';   // стиль YouTube: плейлисты и страница просмотра
 
   /* ---------- цвета ---------- */
@@ -170,7 +171,7 @@
     if (home) {
       $('#spectrum').hidden = true; $('#controls').hidden = true;
       view = []; renderHome();
-      if (window.WallUI) WallUI.hide();
+      if (window.WallUI && !icqOn()) WallUI.hide();
       return;
     }
     const c = charById(state.char) || { name: '' };
@@ -184,7 +185,7 @@
     if (c.cover) { $('#pl-img').src = c.cover; crumbEl.style.setProperty('--bg', bgUrl(c.cover)); }
     else crumbEl.style.removeProperty('--bg');
     renderSpectrum(); renderTabs(); renderGrid();
-    if (window.WallUI) WallUI.show(state.char);   // стена видна только в стиле «ВКонтакте»
+    if (window.WallUI && !icqOn()) WallUI.show(state.char);   // стена видна только в стилях «ВКонтакте» и ICQ
   }
 
   bar.addEventListener('click', e => {

@@ -4,7 +4,8 @@
   const BAR = {
     pinterest: { light: '#ffffff', dark: '#111111' },
     youtube: { light: '#ffffff', dark: '#0f0f0f' },
-    vk: { light: '#45688e', dark: '#2d4157' }
+    vk: { light: '#45688e', dark: '#2d4157' },
+    icq: { light: '#d4d0c8', dark: '#2b2b2b' }
   };
   const sync = () => {
     if (meta) meta.content = (BAR[root.dataset.style] || BAR.pinterest)[root.dataset.theme === 'dark' ? 'dark' : 'light'];
@@ -19,11 +20,11 @@
     try { localStorage.setItem('wardrobe-theme', t); } catch {}
   });
 
-  /* ---------- стиль сайта: Pinterest / YouTube ---------- */
+  /* ---------- стиль сайта: Pinterest / YouTube / ВКонтакте / ICQ ---------- */
   const btn = document.getElementById('style');
   const menu = document.getElementById('style-menu');
   const applyStyle = s => {
-    root.dataset.style = s === 'youtube' || s === 'vk' ? s : 'pinterest';
+    root.dataset.style = s === 'youtube' || s === 'vk' || s === 'icq' ? s : 'pinterest';
     sync();
     if (menu) menu.querySelectorAll('[data-pick]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.pick === root.dataset.style)));
   };

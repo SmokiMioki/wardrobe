@@ -1,4 +1,5 @@
 /* Стена персонажа в стиле «ВКонтакте» 2010: записи, комментарии, граффити.
+   В стиле «ICQ» та же стена работает как чат (см. icq.js).
    Общие записи лежат в wall.json в репозитории. Публиковать в него может тот, у кого на этом устройстве
    сохранён вход в админку (токен). У остальных записи остаются в браузере, их видит только автор. */
 (() => {
@@ -11,6 +12,8 @@
   const $ = (s, r = el) => r.querySelector(s);
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const vk = () => root.dataset.style === 'vk';
+  const icq = () => root.dataset.style === 'icq';
+  const skin = () => vk() || icq();   // стили, в которых стена видна
   const pl = (n, [a, b, c]) => { const x = n % 10, y = n % 100; return x === 1 && y !== 11 ? a : x >= 2 && x <= 4 && (y < 12 || y > 14) ? b : c; };
   const API = () => String((window.WARDROBE && window.WARDROBE.wallApi) || '').trim();   // адрес воркера для записей гостей
   const safeImg = s => /^(?:img|wall)\/[\w.-]+$/.test(s || '') || /^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(s || '') ? s : '';
@@ -22,6 +25,11 @@
   };
   const local = () => { const l = store.get(LS_LOCAL, null); return { posts: Array.isArray(l && l.posts) ? l.posts : [], replies: Array.isArray(l && l.replies) ? l.replies : [] }; };
   const admin = () => { const c = store.get(LS_ADMIN, {}); return c && c.owner && c.repo && c.token ? c : null; };
+  /* свои записи: по номеру (отправлено с этого устройства) или по имени, которое сохранено в браузере */
+  const LS_MINE = 'wardrobe-wall-mine';
+  const mine = new Set(store.get(LS_MINE, []));
+  const markMine = id => { mine.add(id); store.set(LS_MINE, [...mine].slice(-300)); };
+  const isMe = (id, author) => mine.has(id) || (!!author && author === store.get(LS_NAME, ''));
 
   /* ---------- GitHub ---------- */
   const toB64 = s => { const b = new TextEncoder().encode(s); let t = ''; b.forEach(x => t += String.fromCharCode(x)); return btoa(t); };
@@ -82,12 +90,13 @@
   let busy = false;
   const draft = { blob: null, url: '' };
 
-  async function load() {
+  async function load(keep) {   // keep: при сбое оставить уже загруженное (для обновления в фоне)
     try {
       const r = await fetch(FILE + '?t=' + Date.now(), { cache: 'no-store' });
-      const d = r.ok ? await r.json() : [];
+      if (!r.ok) throw 0;
+      const d = await r.json();
       remote = Array.isArray(d) ? d.filter(p => p && p.id && p.char) : [];
-    } catch { remote = []; }
+    } catch { if (!keep || remote === null) remote = []; }
     /* то, что гость отправил через воркер и что уже появилось в репозитории, из браузера убираем */
     const l = local(), ids = new Set(remote.map(p => p.id)), rids = new Set(remote.flatMap(p => (p.replies || []).map(r => r.id)));
     const np = l.posts.filter(p => !(p.pending && ids.has(p.id))), nr = l.replies.filter(r => !(r.pending && rids.has(r.id)));
@@ -109,20 +118,27 @@
 
   /* ---------- вид ---------- */
   const when = iso => {
-    try { return new Date(iso).toLocaleString('ru-RU', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }).replace(', ', ' в '); } catch { return ''; }
+    try {
+      const d = new Date(iso);
+      if (icq()) {   // в чате коротко: 22:14, а для прошлых дней ещё и дата
+        const t = d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+        return d.toDateString() === new Date().toDateString() ? t : d.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' }) + ' ' + t;
+      }
+      return d.toLocaleString('ru-RU', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }).replace(', ', ' в ');
+    } catch { return ''; }
   };
   const hue = s => { let h = 0; for (const ch of String(s)) h = (h * 31 + ch.charCodeAt(0)) % 360; return h; };
   const ava = name => `<span class="w-ava" style="background:hsl(${hue(name)} 32% 52%)">${esc(String(name || '?').charAt(0).toUpperCase())}</span>`;
   const canDel = p => (p.local && !p.pending) || !!admin();   // гость удаляет только то, что осталось у него в браузере
 
   function replyHtml(p, r) {
-    return `<div class="w-rp">${ava(r.author)}<div class="w-body"><b class="w-au">${esc(r.author)}</b> <span class="w-tx">${esc(r.text)}</span>
+    return `<div class="w-rp${r.local || isMe(r.id, r.author) ? ' mine' : ''}">${ava(r.author)}<div class="w-body"><b class="w-au">${esc(r.author)}</b> <span class="w-tx">${esc(r.text)}</span>
       <div class="w-meta"><span>${esc(when(r.ts))}</span>${canDel(r) ? `<button type="button" class="w-lnk" data-a="rdel" data-p="${esc(p.id)}" data-r="${esc(r.id)}">Удалить</button>` : ''}</div></div></div>`;
   }
   function postHtml(p) {
     const img = safeImg(p.img);
     const reps = Array.isArray(p.replies) ? p.replies : [];
-    return `<article class="w-post" data-id="${esc(p.id)}">${ava(p.author)}<div class="w-body">
+    return `<article class="w-post${p.local || isMe(p.id, p.author) ? ' mine' : ''}" data-id="${esc(p.id)}">${ava(p.author)}<div class="w-body">
       <b class="w-au">${esc(p.author)}</b>${p.pending ? ' <i class="w-loc" title="Запись отправлена и скоро появится у всех">ожидает публикации</i>' : p.local ? ' <i class="w-loc" title="Эту запись видно только в этом браузере">видно только тебе</i>' : ''}
       ${p.text ? `<div class="w-tx">${esc(p.text)}</div>` : ''}
       ${img ? `<img class="w-img" src="${esc(img)}" alt="Граффити" loading="lazy">` : ''}
@@ -134,7 +150,8 @@
   function renderList() {
     const list = posts();
     $('.w-count').textContent = list.length ? `${list.length} ${pl(list.length, ['запись', 'записи', 'записей'])}` : '';
-    $('.w-list').innerHTML = list.length ? list.map(postHtml).join('') : '<p class="w-empty">На стене пока ничего нет. Напиши первым или нарисуй граффити.</p>';
+    $('.w-list').innerHTML = list.length ? list.map(postHtml).join('') : `<p class="w-empty">${icq() ? 'Тут пока тихо. Напиши первым или нарисуй граффити.' : 'На стене пока ничего нет. Напиши первым или нарисуй граффити.'}</p>`;
+    $('.w-text').placeholder = icq() ? 'Сообщение… Enter — отправить, Shift+Enter — новая строка' : 'Написать на стене…';
     $('.w-where').textContent = admin() ? 'Запись увидят все' : API() ? 'Запись увидят все, примерно через минуту' : 'Запись останется только в этом браузере';
   }
 
@@ -259,6 +276,7 @@
         const l = local(); l.posts.unshift(post);
         if (!store.set(LS_LOCAL, l)) throw new Error('В браузере не хватило места. Попробуй рисунок попроще.');
       }
+      markMine(post.id);
       $('.w-text').value = ''; unattach(); cv()._wipe(); gf.undo.length = 0;
       renderList(); msg(admin() || API() ? 'Запись отправлена. Остальные увидят её примерно через минуту.' : 'Запись добавлена на твою стену.');
     } catch (e) { msg(e.message, true); }
@@ -281,6 +299,7 @@
         const l = local(); l.replies.push({ ...r, post: postId });
         if (!store.set(LS_LOCAL, l)) throw new Error('В браузере не хватило места.');
       }
+      markMine(r.id);
       renderList();
     } catch (e) { msg(e.message, true); }
     lock(false);
@@ -342,18 +361,31 @@
   el.addEventListener('keydown', e => {
     if (e.key === 'Enter' && e.target.matches('.w-rf input')) { e.preventDefault(); e.target.nextElementSibling.click(); }
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && e.target.matches('.w-text')) { e.preventDefault(); send(); }
+    else if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && icq() && e.target.matches('.w-text')) { e.preventDefault(); send(); }   // в чате Enter отправляет
   });
 
   /* ---------- вход и выход ---------- */
   async function show(id) {
     const same = cur === id && built && remote !== null;   // фильтры и поиск не должны стирать набранное
     cur = id; el.hidden = false;
-    if (!vk() || same) return;
+    if (!skin() || same) return;
     build();
-    if (remote === null) { renderList(); await load(); }
+    if (remote === null) { renderList(); await load(); dispatchEvent(new Event('wall-updated')); }
     if (cur === id) renderList();
   }
   function hide() { cur = null; el.hidden = true; }
-  window.WallUI = { show, hide };
-  addEventListener('wardrobe-style', () => { if (cur && vk()) show(cur); });
+
+  /* фоновое обновление для чата: тянет wall.json и перерисовывает, только если что-то изменилось */
+  const sigOf = () => (remote || []).map(p => p.id + ':' + (Array.isArray(p.replies) ? p.replies.length : 0)).join();
+  async function poll() {
+    if (busy || remote === null) return;
+    const before = sigOf();
+    await load(true);
+    if (sigOf() === before) return;
+    if (cur && skin() && built) renderList();
+    dispatchEvent(new Event('wall-updated'));
+  }
+
+  window.WallUI = { show, hide, poll, isMine: isMe, remote: () => remote };
+  addEventListener('wardrobe-style', () => { if (cur && skin()) { show(cur); if (built) renderList(); } });
 })();
