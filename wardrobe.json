@@ -15,5 +15,29 @@
       "img/mvma776i-mvma776j1.webp"
     ],
     "ar": 0.667
+  },
+  {
+    "id": "mvnmqk1g",
+    "name": "Незамерзайка",
+    "char": "cmvma6shd",
+    "cat": "Old Money",
+    "colors": [
+      "Чёрный"
+    ],
+    "seasons": [
+      "Весна",
+      "Осень"
+    ],
+    "tags": [
+      "Пальто",
+      "брюки",
+      "водолазка"
+    ],
+    "note": "She wears a long, tailored brown overcoat of soft wool-like fabric with structured lapels and a double-breasted cut, left open over a fitted black turtleneck top. High-waisted black wide-leg trousers in smooth, tailored fabric feature sharp front pleats and a slim black leather belt with a gold buckle. Black pointed-toe stiletto heels complete the look, along with a compact black leather handbag with gold chain strap and clasp, gold hoop earrings, and a slim wristwatch.",
+    "added": "2026-10-25T09:32:55.156Z",
+    "images": [
+      "img/mvnmqk1g-mvnmqk1j1.webp"
+    ],
+    "ar": 0.667
   }
 ]
