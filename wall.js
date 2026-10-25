@@ -16,6 +16,7 @@
   const skin = () => vk() || icq();   // стили, в которых стена видна
   const pl = (n, [a, b, c]) => { const x = n % 10, y = n % 100; return x === 1 && y !== 11 ? a : x >= 2 && x <= 4 && (y < 12 || y > 14) ? b : c; };
   const API = () => String((window.WARDROBE && window.WARDROBE.wallApi) || '').trim();   // адрес воркера для записей гостей
+  const rich = s => window.Smileys ? Smileys.html(esc(s)) : esc(s);   // текст с анимированными смайлами :имя:
   const safeImg = s => /^(?:img|wall)\/[\w.-]+$/.test(s || '') || /^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(s || '') ? s : '';
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
 
@@ -132,7 +133,7 @@
   const canDel = p => (p.local && !p.pending) || !!admin();   // гость удаляет только то, что осталось у него в браузере
 
   function replyHtml(p, r) {
-    return `<div class="w-rp${r.local || isMe(r.id, r.author) ? ' mine' : ''}">${ava(r.author)}<div class="w-body"><b class="w-au">${esc(r.author)}</b> <span class="w-tx">${esc(r.text)}</span>
+    return `<div class="w-rp${r.local || isMe(r.id, r.author) ? ' mine' : ''}">${ava(r.author)}<div class="w-body"><b class="w-au">${esc(r.author)}</b> <span class="w-tx">${rich(r.text)}</span>
       <div class="w-meta"><span>${esc(when(r.ts))}</span>${canDel(r) ? `<button type="button" class="w-lnk" data-a="rdel" data-p="${esc(p.id)}" data-r="${esc(r.id)}">Удалить</button>` : ''}</div></div></div>`;
   }
   function postHtml(p) {
@@ -140,7 +141,7 @@
     const reps = Array.isArray(p.replies) ? p.replies : [];
     return `<article class="w-post${p.local || isMe(p.id, p.author) ? ' mine' : ''}" data-id="${esc(p.id)}">${ava(p.author)}<div class="w-body">
       <b class="w-au">${esc(p.author)}</b>${p.pending ? ' <i class="w-loc" title="Запись отправлена и скоро появится у всех">ожидает публикации</i>' : p.local ? ' <i class="w-loc" title="Эту запись видно только в этом браузере">видно только тебе</i>' : ''}
-      ${p.text ? `<div class="w-tx">${esc(p.text)}</div>` : ''}
+      ${p.text ? `<div class="w-tx">${rich(p.text)}</div>` : ''}
       ${img ? `<img class="w-img" src="${esc(img)}" alt="Граффити" loading="lazy">` : ''}
       <div class="w-meta"><span>${esc(when(p.ts))}</span><button type="button" class="w-lnk" data-a="reply">Комментировать</button>${canDel(p) ? '<button type="button" class="w-lnk" data-a="del">Удалить</button>' : ''}</div>
       ${reps.length ? `<div class="w-reps">${reps.map(r => replyHtml(p, r)).join('')}</div>` : ''}
@@ -150,11 +151,14 @@
   function renderList() {
     const list = posts();
     $('.w-count').textContent = list.length ? `${list.length} ${pl(list.length, ['запись', 'записи', 'записей'])}` : '';
+    if (window.Smileys) Smileys.clear($('.w-list'));
     $('.w-list').innerHTML = list.length ? list.map(postHtml).join('') : `<p class="w-empty">${icq() ? 'Тут пока тихо. Напиши первым или нарисуй граффити.' : 'На стене пока ничего нет. Напиши первым или нарисуй граффити.'}</p>`;
     $('.w-text').placeholder = icq() ? 'Сообщение… Enter — отправить, Shift+Enter — новая строка' : 'Написать на стене…';
+    if (window.Smileys) Smileys.mount($('.w-list'));
     $('.w-where').textContent = admin() ? 'Запись увидят все' : API() ? 'Запись увидят все, примерно через минуту' : 'Запись останется только в этом браузере';
   }
 
+  const smileyNames = () => window.Smileys ? Smileys.names() : [];
   const COLORS = ['#000000', '#8d8d8d', '#ffffff', '#e64646', '#ff9a2e', '#ffd52e', '#3fb04a', '#29b6c6', '#2f6fd6', '#8b4fc8', '#ff6fae', '#8a5a36'];
   function build() {
     if (built) return; built = true;
@@ -178,7 +182,8 @@
           <canvas class="gf-cv" width="800" height="340"></canvas>
           <div class="gf-foot"><button type="button" class="w-btn" data-a="gattach">Прикрепить граффити</button><button type="button" class="w-lnk" data-a="gclose">Закрыть</button></div>
         </div>
-        <div class="w-bar"><button type="button" class="w-btn" data-a="send">Отправить</button><button type="button" class="w-lnk" data-a="graffiti">Нарисовать граффити</button><span class="w-where"></span></div>
+        <div class="w-sm" hidden>${smileyNames().map(n => `<button type="button" class="w-sm-i" data-ins=":${n}:" title=":${n}:" aria-label="Смайл ${n}"><i class="sm" data-sm="${n}"></i></button>`).join('')}</div>
+        <div class="w-bar"><button type="button" class="w-btn" data-a="send">Отправить</button><button type="button" class="w-lnk" data-a="graffiti">Нарисовать граффити</button>${smileyNames().length ? '<button type="button" class="w-lnk" data-a="smileys">Смайлы</button>' : ''}<span class="w-where"></span></div>
         <p class="w-msg" role="status" hidden></p>
       </div>
       <div class="w-list"></div>`;
@@ -336,16 +341,27 @@
     lock(false);
   }
 
+  /* вставка смайла в поле записи на место курсора */
+  function insertText(code) {
+    const ta = $('.w-text'), a = ta.selectionStart == null ? ta.value.length : ta.selectionStart, b = ta.selectionEnd == null ? a : ta.selectionEnd;
+    const pad = a > 0 && !/\s/.test(ta.value[a - 1]) ? ' ' : '';
+    ta.value = (ta.value.slice(0, a) + pad + code + ' ' + ta.value.slice(b)).slice(0, 1000);
+    const pos = Math.min(a + pad.length + code.length + 1, ta.value.length);
+    ta.focus(); ta.setSelectionRange(pos, pos);
+  }
+
   /* ---------- события ---------- */
   el.addEventListener('click', e => {
     if (busy) return;
     const t = e.target.closest('button'); if (!t) return;
     const c = cv();
+    if (t.dataset.ins) return insertText(t.dataset.ins);
     if (t.dataset.t) { gf.tool = t.dataset.t; return pick(t.parentNode, t); }
     if (t.dataset.s) { gf.size = +t.dataset.s; return pick(t.parentNode, t); }
     if (t.dataset.c) { gf.color = t.dataset.c; if (gf.tool === 'eraser') { gf.tool = 'marker'; pick($('[data-g="tool"]'), $('[data-t="marker"]')); } return pick(t.parentNode, t); }
     switch (t.dataset.a) {
       case 'graffiti': $('.gf').hidden = !$('.gf').hidden; break;
+      case 'smileys': { const m = $('.w-sm'); m.hidden = !m.hidden; if (!m.hidden && window.Smileys) Smileys.mount(m); break; }
       case 'gclose': $('.gf').hidden = true; break;
       case 'gundo': c._undo(); break;
       case 'gclear': c._wipe(); break;
